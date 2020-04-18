@@ -1,0 +1,21 @@
+# Packages #
+############
+pkg/*
+bin
+data/*
+*.dmg
+*.swp
+
+# Logs and databases #
+######################
+logs
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode
+.idea
+*.iml
