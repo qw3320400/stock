@@ -21,7 +21,7 @@ def main():
     for stock in allStockData:
         codeList.append(stock[0])
     
-    startTimeStr = '2006-01-01'
+    startTimeStr = '2008-01-01'
     # 2020-04-18
     endTimeStr = '2020-04-01'
     startTime = datetime.datetime.strptime(startTimeStr, '%Y-%m-%d')
