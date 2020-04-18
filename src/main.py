@@ -23,7 +23,7 @@ def main():
     
     startTimeStr = '2006-01-01'
     # 2020-04-18
-    endTimeStr = '2020-03-01'
+    endTimeStr = '2020-04-01'
     startTime = datetime.datetime.strptime(startTimeStr, '%Y-%m-%d')
     endTime =  datetime.datetime.strptime(endTimeStr, '%Y-%m-%d')
     ExportBaostockData(codeList, startTime, endTime)
