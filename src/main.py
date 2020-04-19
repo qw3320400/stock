@@ -23,7 +23,7 @@ def main():
     
     startTimeStr = '2008-01-01'
     # 2020-04-18
-    endTimeStr = '2020-04-01'
+    endTimeStr = '2020-03-01'
     startTime = datetime.datetime.strptime(startTimeStr, '%Y-%m-%d')
     endTime =  datetime.datetime.strptime(endTimeStr, '%Y-%m-%d')
     ExportBaostockData(codeList, startTime, endTime)
@@ -43,9 +43,9 @@ def ExportBaostockData(codeList, startTime, endTime):
             ExportBaostockDataByMonth(code, endTime)
         # sub 1 month
         if endTime.month == 1:
-            endTime = datetime.date(endTime.year - 1, 12, 1)
+            endTime = datetime.datetime(endTime.year - 1, 12, 1)
         else:
-            endTime = datetime.date(endTime.year, endTime.month - 1, 1)
+            endTime = datetime.datetime(endTime.year, endTime.month - 1, 1)
 
 if __name__ == "__main__":
     main()
