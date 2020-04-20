@@ -38,7 +38,11 @@ def ExportBaostockDataByMonth(code, date):
     # frequency
     for dataFrequency in dataFrequencyList:
         startTime = datetime.date(date.year, date.month, 1)
-        endTime = datetime.date(date.year, date.month + 1, 1) - datetime.timedelta(days = 1)
+        endTime = startTime
+        if date.month == 12:
+            endTime = datetime.date(date.year + 1, 1, 1) - datetime.timedelta(days = 1)
+        else:
+            endTime = datetime.date(date.year, date.month + 1, 1) - datetime.timedelta(days = 1)
 
         # 后复权
         saveName = "{:s}:{:s}:{:s}:1.csv".format(code, date.strftime('%Y-%m'), dataFrequency.frequency)
