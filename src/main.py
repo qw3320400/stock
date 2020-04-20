@@ -16,7 +16,7 @@ def main():
             break
         index -= 1
 
-    allStockData = ExportBaostockAllStock(datetime.datetime.strptime(lastTradeDateStr, '%Y-%m-%d'))
+    allStockData = ExportBaostockAllStock(datetime.datetime.strptime('2020-04-17', '%Y-%m-%d'))
     codeList = []
     for stock in allStockData:
         codeList.append(stock[0])
