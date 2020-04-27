@@ -27,14 +27,21 @@ dataFrequencyList = [
 
 baostockDataStartDate = datetime.datetime.strptime("2006-01-01", '%Y-%m-%d')
 
+def NewConnection():
+    #### 登陆系统 ####
+    con = baostock.login()
+    Log('login respond error_code:' + con.error_code + ' error_msg:' + con.error_msg)
+    return con
+
+def CloseConnection(con):
+    #### 登出系统 ####
+    baostock.logout()
+
 def ExportBaostockDataByMonth(code, date):
     filePath = os.path.dirname(__file__)
     savePath = os.path.join(filePath, "../../data/baostock/{:d}/{:d}".format(date.year, date.month))
     os.makedirs(savePath, exist_ok=True)
-    #### 登陆系统 ####
-    lg = baostock.login()
-    Log('login respond error_code:' + lg.error_code + ' error_msg:' + lg.error_msg)
-    
+
     # frequency
     for dataFrequency in dataFrequencyList:
         startTime = datetime.date(date.year, date.month, 1)
@@ -76,16 +83,10 @@ def ExportBaostockDataByMonth(code, date):
             result = pandas.DataFrame(data_list, columns = rs.fields)
             result.to_csv(saveFile, encoding = "utf-8", index = False)
 
-    #### 登出系统 ####
-    baostock.logout()
-
 def ExportBaostockTradeDate():
     filePath = os.path.dirname(__file__)
     savePath = os.path.join(filePath, "../../data/baostock/tradedate")
     os.makedirs(savePath, exist_ok=True)
-    #### 登陆系统 ####
-    lg = baostock.login()
-    Log('login respond error_code:' + lg.error_code + ' error_msg:' + lg.error_msg)
 
     nowDate = datetime.datetime.now()
     saveName = "tradedate:{:s}.csv".format(nowDate.strftime('%Y-%m-%d'))
@@ -101,18 +102,12 @@ def ExportBaostockTradeDate():
     #### 结果集输出到csv文件 ####
     result.to_csv(saveFile, encoding = "utf-8", index = False)
 
-    #### 登出系统 ####
-    baostock.logout()
-
     return data_list
 
 def ExportBaostockAllStock(date):
     filePath = os.path.dirname(__file__)
     savePath = os.path.join(filePath, "../../data/baostock/allstock")
     os.makedirs(savePath, exist_ok=True)
-    #### 登陆系统 ####
-    lg = baostock.login()
-    Log('login respond error_code:' + lg.error_code + ' error_msg:' + lg.error_msg)
 
     saveName = "allstock:{:s}.csv".format(date.strftime('%Y-%m-%d'))
     saveFile = os.path.join(savePath, saveName)
@@ -126,8 +121,5 @@ def ExportBaostockAllStock(date):
     result = pandas.DataFrame(data_list, columns = rs.fields)
     #### 结果集输出到csv文件 ####
     result.to_csv(saveFile, encoding = "utf-8", index = False)
-
-    #### 登出系统 ####
-    baostock.logout()
 
     return data_list

@@ -6,6 +6,8 @@ from utils.utils import *
 def main():
     Log("==start==")
 
+    NewConnection()
+
     tradeDateData = ExportBaostockTradeDate()
     lastTradeDateStr = ""
     index = len(tradeDateData) - 1
@@ -27,6 +29,8 @@ def main():
     startTime = datetime.datetime.strptime(startTimeStr, '%Y-%m-%d')
     endTime =  datetime.datetime.strptime(endTimeStr, '%Y-%m-%d')
     ExportBaostockData(codeList, startTime, endTime)
+
+    CloseConnection()
     
     Log("==end==")
 
