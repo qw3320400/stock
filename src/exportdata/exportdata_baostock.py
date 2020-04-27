@@ -47,32 +47,34 @@ def ExportBaostockDataByMonth(code, date):
         # 后复权
         saveName = "{:s}:{:s}:{:s}:1.csv".format(code, date.strftime('%Y-%m'), dataFrequency.frequency)
         saveFile = os.path.join(savePath, saveName)
-        rs = baostock.query_history_k_data_plus(code, dataFrequency.fields,
-            start_date = startTime.strftime('%Y-%m-%d') , end_date = endTime.strftime('%Y-%m-%d'), frequency = dataFrequency.frequency, adjustflag = "1")
-        Log('query_history_k_data_plus error_code:{:s} error_msg:{:s} {:s}'.format(rs.error_code, rs.error_msg, saveName))
-        #### 打印结果集 ####
-        data_list = []
-        while (rs.error_code == '0') & rs.next():
-            # 获取一条记录，将记录合并在一起
-            data_list.append(rs.get_row_data())
-        #### 结果集输出到csv文件 ####
-        result = pandas.DataFrame(data_list, columns = rs.fields)
-        result.to_csv(saveFile, encoding = "utf-8", index = False)
+        if os.path.exists(saveFile) == False:
+            rs = baostock.query_history_k_data_plus(code, dataFrequency.fields,
+                start_date = startTime.strftime('%Y-%m-%d') , end_date = endTime.strftime('%Y-%m-%d'), frequency = dataFrequency.frequency, adjustflag = "1")
+            Log('query_history_k_data_plus error_code:{:s} error_msg:{:s} {:s}'.format(rs.error_code, rs.error_msg, saveName))
+            #### 打印结果集 ####
+            data_list = []
+            while (rs.error_code == '0') & rs.next():
+                # 获取一条记录，将记录合并在一起
+                data_list.append(rs.get_row_data())
+            #### 结果集输出到csv文件 ####
+            result = pandas.DataFrame(data_list, columns = rs.fields)
+            result.to_csv(saveFile, encoding = "utf-8", index = False)
 
         # 不复权
         saveName = "{:s}:{:s}:{:s}:3.csv".format(code, date.strftime('%Y-%m'), dataFrequency.frequency)
         saveFile = os.path.join(savePath, saveName)
-        rs = baostock.query_history_k_data_plus(code, dataFrequency.fields,
-            start_date = startTime.strftime('%Y-%m-%d') , end_date = endTime.strftime('%Y-%m-%d'), frequency = dataFrequency.frequency, adjustflag = "3")
-        Log('query_history_k_data_plus error_code:{:s} error_msg:{:s} {:s}'.format(rs.error_code, rs.error_msg, saveName))
-        #### 打印结果集 ####
-        data_list = []
-        while (rs.error_code == '0') & rs.next():
-            # 获取一条记录，将记录合并在一起
-            data_list.append(rs.get_row_data())
-        #### 结果集输出到csv文件 ####
-        result = pandas.DataFrame(data_list, columns = rs.fields)
-        result.to_csv(saveFile, encoding = "utf-8", index = False)
+        if os.path.exists(saveFile) == False:
+            rs = baostock.query_history_k_data_plus(code, dataFrequency.fields,
+                start_date = startTime.strftime('%Y-%m-%d') , end_date = endTime.strftime('%Y-%m-%d'), frequency = dataFrequency.frequency, adjustflag = "3")
+            Log('query_history_k_data_plus error_code:{:s} error_msg:{:s} {:s}'.format(rs.error_code, rs.error_msg, saveName))
+            #### 打印结果集 ####
+            data_list = []
+            while (rs.error_code == '0') & rs.next():
+                # 获取一条记录，将记录合并在一起
+                data_list.append(rs.get_row_data())
+            #### 结果集输出到csv文件 ####
+            result = pandas.DataFrame(data_list, columns = rs.fields)
+            result.to_csv(saveFile, encoding = "utf-8", index = False)
 
     #### 登出系统 ####
     baostock.logout()
