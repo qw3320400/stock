@@ -5,6 +5,7 @@ bin
 data/*
 *.dmg
 *.swp
+.vscode/*
 
 # Logs and databases #
 ######################
