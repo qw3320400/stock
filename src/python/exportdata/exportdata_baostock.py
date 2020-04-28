@@ -38,7 +38,7 @@ def BaostockLogout():
 
 def ExportBaostockDataByMonth(code, date):
     filePath = os.path.dirname(__file__)
-    savePath = os.path.join(filePath, "../../data/baostock/{:d}/{:d}".format(date.year, date.month))
+    savePath = os.path.join(filePath, "../../../data/baostock/{:d}/{:d}".format(date.year, date.month))
     os.makedirs(savePath, exist_ok=True)
     
     # frequency
@@ -86,7 +86,7 @@ def ExportBaostockDataByMonth(code, date):
 
 def ExportBaostockTradeDate():
     filePath = os.path.dirname(__file__)
-    savePath = os.path.join(filePath, "../../data/baostock/tradedate")
+    savePath = os.path.join(filePath, "../../../data/baostock/tradedate")
     os.makedirs(savePath, exist_ok=True)
 
     nowDate = datetime.datetime.now()
@@ -107,7 +107,7 @@ def ExportBaostockTradeDate():
 
 def ExportBaostockAllStock(date):
     filePath = os.path.dirname(__file__)
-    savePath = os.path.join(filePath, "../../data/baostock/allstock")
+    savePath = os.path.join(filePath, "../../../data/baostock/allstock")
     os.makedirs(savePath, exist_ok=True)
     
     saveName = "allstock:{:s}.csv".format(date.strftime('%Y-%m-%d'))
