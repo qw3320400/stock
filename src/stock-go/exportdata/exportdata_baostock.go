@@ -56,14 +56,6 @@ func ExportBaostockData() error {
 	defer func() {
 		bc.Logout()
 	}()
-	// 测试查询数据
-	// _, err = bc.QueryHistoryKDataPlus("sh.600710",
-	// 	"date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg",
-	// 	"2016-07-01", "2016-07-31",
-	// 	"m", "3")
-	// if err != nil {
-	// 	return fmt.Errorf("[ExportBaostockData] bc.QueryHistoryKDataPlus fail\n\t%s", err)
-	// }
 
 	// all stock code
 	allStockFileName := fmt.Sprintf(AllStockFileName, AllStockDate)
@@ -149,48 +141,45 @@ func ExportBaostockDataByMonth(bc *baostock.BaostockConnection, code string, dat
 	}
 	for _, frequency := range FrequencyList {
 		// 后复权
-		adjustFlag := "1"
-		stockFileName := fmt.Sprintf(StockFileName, code, startTime.Format("2006-01"), frequency[0], adjustFlag)
-		stockFile := filepath.Join(stockFilePath, stockFileName)
-		// 如果文件已存在则跳过
-		if _, err := os.Stat(stockFile); os.IsNotExist(err) {
-			stockResponse, err := bc.QueryHistoryKDataPlus(code, frequency[1], startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), frequency[0], adjustFlag)
-			if err != nil || stockResponse.Rows == nil {
-				return fmt.Errorf("[ExportBaostockDataByMonth] bc.QueryTradeDates fail\n\t%s", err)
-			}
-			utils.Log("[ExportBaostockDataByMonth] writing file ... " + stockFileName)
-			fileData, err := baostockResponseToFileByte(stockResponse.Fields, stockResponse.Rows.Recode)
-			if err != nil {
-				return fmt.Errorf("[ExportBaostockDataByMonth] baostockResponseToFileByte fail\n\t%s", err)
-			}
-			err = ioutil.WriteFile(stockFile, fileData, os.ModePerm)
-			if err != nil {
-				return fmt.Errorf("[ExportBaostockDataByMonth] ioutil.WriteFile fail\n\t%s", err)
-			}
-			utils.Log("[ExportBaostockDataByMonth] write file success " + stockFileName)
+		err = queryAndSaveBaostockKData(bc, code, startTime, endTime, stockFilePath, frequency, "1")
+		if err != nil {
+			return fmt.Errorf("[ExportBaostockDataByMonth] queryAndSaveBaostockKData fail\n\t%s", err)
 		}
 
 		// 不复权
-		adjustFlag = "3"
-		stockFileName = fmt.Sprintf(StockFileName, code, startTime.Format("2006-01"), frequency[0], adjustFlag)
-		stockFile = filepath.Join(stockFilePath, stockFileName)
-		// 如果文件已存在则跳过
-		if _, err := os.Stat(stockFile); os.IsNotExist(err) {
-			stockResponse, err := bc.QueryHistoryKDataPlus(code, frequency[1], startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), frequency[0], adjustFlag)
-			if err != nil || stockResponse.Rows == nil {
-				return fmt.Errorf("[ExportBaostockDataByMonth] bc.QueryTradeDates fail\n\t%s", err)
-			}
-			utils.Log("[ExportBaostockDataByMonth] writing file ... " + stockFileName)
-			fileData, err := baostockResponseToFileByte(stockResponse.Fields, stockResponse.Rows.Recode)
-			if err != nil {
-				return fmt.Errorf("[ExportBaostockDataByMonth] baostockResponseToFileByte fail\n\t%s", err)
-			}
-			err = ioutil.WriteFile(stockFile, fileData, os.ModePerm)
-			if err != nil {
-				return fmt.Errorf("[ExportBaostockDataByMonth] ioutil.WriteFile fail\n\t%s", err)
-			}
-			utils.Log("[ExportBaostockDataByMonth] write file success " + stockFileName)
+		err = queryAndSaveBaostockKData(bc, code, startTime, endTime, stockFilePath, frequency, "3")
+		if err != nil {
+			return fmt.Errorf("[ExportBaostockDataByMonth] queryAndSaveBaostockKData fail\n\t%s", err)
 		}
+	}
+	return nil
+}
+
+func queryAndSaveBaostockKData(bc *baostock.BaostockConnection, code string, startTime, endTime time.Time, stockFilePath string, frequency []string, adjustFlag string) error {
+	stockFileName := fmt.Sprintf(StockFileName, code, startTime.Format("2006-01"), frequency[0], adjustFlag)
+	stockFile := filepath.Join(stockFilePath, stockFileName)
+	// 如果文件已存在则跳过
+	if _, err := os.Stat(stockFile); os.IsNotExist(err) {
+		stockResponse, err := bc.QueryHistoryKDataPlusWithTimeOut(code, frequency[1], startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), frequency[0], adjustFlag, 60)
+		if (err != nil && err != baostock.QueryTimeoutErr) || stockResponse.Rows == nil {
+			return fmt.Errorf("[queryAndSaveBaostockKData] bc.QueryTradeDates fail\n\t%s", err)
+		}
+		utils.Log("[queryAndSaveBaostockKData] writing file ... " + stockFileName)
+		var fileData []byte
+		if err == baostock.QueryTimeoutErr {
+			// 读取超时不中断
+			fileData = []byte("query data timeout error")
+		} else {
+			fileData, err = baostockResponseToFileByte(stockResponse.Fields, stockResponse.Rows.Recode)
+			if err != nil {
+				return fmt.Errorf("[queryAndSaveBaostockKData] baostockResponseToFileByte fail\n\t%s", err)
+			}
+		}
+		err = ioutil.WriteFile(stockFile, fileData, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("[queryAndSaveBaostockKData] ioutil.WriteFile fail\n\t%s", err)
+		}
+		utils.Log("[queryAndSaveBaostockKData] write file success " + stockFileName)
 	}
 	return nil
 }

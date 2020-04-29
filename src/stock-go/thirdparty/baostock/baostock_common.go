@@ -1,5 +1,7 @@
 package baostock
 
+import "fmt"
+
 const (
 	// 版本信息
 	BAOSTOCK_CLIENT_VERSION = "00.8.80"
@@ -187,4 +189,7 @@ var (
 	COMPRESSED_MESSAGE_TYPE_TUPLE = []string{
 		MESSAGE_TYPE_GETKDATAPLUS_RESPONSE,
 	}
+
+	// 查询超时错误
+	QueryTimeoutErr = fmt.Errorf("query data timeout error")
 )

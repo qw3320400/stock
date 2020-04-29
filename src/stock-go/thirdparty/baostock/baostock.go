@@ -3,10 +3,12 @@ package baostock
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"fmt"
 	"hash/crc32"
 	"io/ioutil"
 	"net"
+	"runtime/debug"
 	"stock-go/utils"
 	"strconv"
 	"strings"
@@ -118,6 +120,37 @@ func (bc *BaostockConnection) Logout() error {
 	}
 	utils.Log("[Logout] logout to baostock success")
 	return nil
+}
+
+func (bc *BaostockConnection) QueryHistoryKDataPlusWithTimeOut(code, fields, startDate, endDate, frequency, adjustFlag string, timeoutSecond int64) (*QueryHistoryKDataResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSecond)*time.Second)
+	var (
+		ret       *QueryHistoryKDataResponse
+		err       error
+		startTime = time.Now()
+	)
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				utils.Log(fmt.Sprintf("panic:\n\t%s", err))
+				stack := strings.Join(strings.Split(string(debug.Stack()), "\n")[2:], "\n")
+				utils.Log(fmt.Sprintf("stack:\n\t%s", stack))
+			}
+		}()
+		ret, err = bc.QueryHistoryKDataPlus(code, fields, startDate, endDate, frequency, adjustFlag)
+		cancel()
+	}()
+	select {
+	case <-ctx.Done():
+		switch ctxErr := ctx.Err(); ctxErr {
+		case context.DeadlineExceeded:
+			utils.LogErr(fmt.Sprintf("bc.QueryHistoryKDataPlus timeout cost %d err %s", time.Since(startTime), err))
+			err = QueryTimeoutErr
+		default:
+			// 没有超时
+		}
+	}
+	return ret, err
 }
 
 func (bc *BaostockConnection) QueryHistoryKDataPlus(code, fields, startDate, endDate, frequency, adjustFlag string) (*QueryHistoryKDataResponse, error) {
