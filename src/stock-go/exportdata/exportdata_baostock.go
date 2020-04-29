@@ -179,6 +179,10 @@ func queryAndSaveBaostockKData(bc *baostock.BaostockConnection, code string, sta
 			// 读取超时不中断
 			fileData = []byte("query data timeout error")
 			// 记录error的
+			err = os.MkdirAll(filepath.Join(DataPath, ErrorPath), os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("[queryAndSaveBaostockKData] os.MkdirAll fail\n\t%s", err)
+			}
 			err = ioutil.WriteFile(filepath.Join(DataPath, ErrorPath, stockFileName), fileData, os.ModePerm)
 			if err != nil {
 				return fmt.Errorf("[queryAndSaveBaostockKData] ioutil.WriteFile fail\n\t%s", err)
