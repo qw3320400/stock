@@ -12,7 +12,7 @@ func main() {
 		utils.Log("==end==")
 	}()
 
-	// 测试导数据
+	// 导数据
 	err := exportdata.ExportBaostockData()
 	if err != nil {
 		utils.LogErr(fmt.Sprint("[main] exportdata.ExportBaostockData fail", err))

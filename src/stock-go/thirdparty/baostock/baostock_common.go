@@ -10,7 +10,7 @@ const (
 	BAOSTOCK_SERVER_REAL_TIME_IP   = "www.baostock.com" // 实时行情服务地址 localhost  www.baostock.com
 	BAOSTOCK_SERVER_REAL_TIME_PORT = 10032              // 实时行情端口
 
-	BAOSTOCK_PER_PAGE_COUNT = 10000 // 默认每页查询条数
+	BAOSTOCK_PER_PAGE_COUNT = 100000 // 默认每页查询条数
 
 	STOCK_CODE_LENGTH = 9      // 证券代码的长度
 	MESSAGE_SPLIT     = "\x01" // 消息内部的分隔符
@@ -176,13 +176,15 @@ const (
 
 )
 
-// 方法名及包名的对应关系
-var MESSAGE_PACKAGE_MAPPING = map[string]string{
-	"__query_history_k_data_page": "baostock.security.history",
-}
+var (
+	// 方法名及包名的对应关系
+	MESSAGE_PACKAGE_MAPPING = map[string]string{
+		"__query_history_k_data_page": "baostock.security.history",
+	}
 
-// 返回消息体进行压缩的响应代码
-// 目前消息体进行压缩的有：获取历史K线数据响应
-var COMPRESSED_MESSAGE_TYPE_TUPLE = []string{
-	MESSAGE_TYPE_GETKDATAPLUS_RESPONSE,
-}
+	// 返回消息体进行压缩的响应代码
+	// 目前消息体进行压缩的有：获取历史K线数据响应
+	COMPRESSED_MESSAGE_TYPE_TUPLE = []string{
+		MESSAGE_TYPE_GETKDATAPLUS_RESPONSE,
+	}
+)

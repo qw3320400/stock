@@ -77,11 +77,11 @@ func (bc *BaostockConnection) Login(user, password string, options int64) error 
 	if recieveData.ErrorCode != BSERR_SUCCESS {
 		return fmt.Errorf("[Login] return error code is not 0 %+v", recieveData)
 	}
-	loginData, err := recieveData.GetLoginData()
+	response, err := recieveData.GetLoginResponse()
 	if err != nil {
-		return fmt.Errorf("[Login] recieveData.GetLoginData fail\n\t%s", err)
+		return fmt.Errorf("[Login] recieveData.GetLoginResponse fail\n\t%s", err)
 	}
-	bc.user = loginData.User
+	bc.user = response.User
 	utils.Log("[Login] login to baostock success")
 	return nil
 }
@@ -120,11 +120,11 @@ func (bc *BaostockConnection) Logout() error {
 	return nil
 }
 
-func (bc *BaostockConnection) QueryHistoryKDataPlus(code, fields, startDate, endDate, frequency, adjustFlag string) (*RecieveData, error) {
+func (bc *BaostockConnection) QueryHistoryKDataPlus(code, fields, startDate, endDate, frequency, adjustFlag string) (*QueryHistoryKDataResponse, error) {
 	return bc.QueryHistoryKDataPage(code, fields, startDate, endDate, frequency, adjustFlag, 1, BAOSTOCK_PER_PAGE_COUNT)
 }
 
-func (bc *BaostockConnection) QueryHistoryKDataPage(code, fields, startDate, endDate, frequency, adjustFlag string, curPageNum, perPageCount int64) (*RecieveData, error) {
+func (bc *BaostockConnection) QueryHistoryKDataPage(code, fields, startDate, endDate, frequency, adjustFlag string, curPageNum, perPageCount int64) (*QueryHistoryKDataResponse, error) {
 	if bc == nil || bc.connection == nil {
 		return nil, fmt.Errorf("[QueryHistoryKDataPage] bc is nil or connection is nil")
 	}
@@ -160,7 +160,7 @@ func (bc *BaostockConnection) QueryHistoryKDataPage(code, fields, startDate, end
 	if adjustFlag == "" {
 		adjustFlag = "3"
 	}
-	utils.Log("[QueryHistoryKDataPage] querying data from baostock ...")
+	utils.Log("[QueryHistoryKDataPage] querying history k data from baostock ...")
 	if bc.user == "" {
 		return nil, fmt.Errorf("[QueryHistoryKDataPage] bc.user is nil, not login")
 	}
@@ -168,7 +168,7 @@ func (bc *BaostockConnection) QueryHistoryKDataPage(code, fields, startDate, end
 		strconv.FormatInt(curPageNum, 10) + MESSAGE_SPLIT + strconv.FormatInt(perPageCount, 10) + MESSAGE_SPLIT +
 		code + MESSAGE_SPLIT + fields + MESSAGE_SPLIT + startDate + MESSAGE_SPLIT + endDate + MESSAGE_SPLIT + frequency + MESSAGE_SPLIT + adjustFlag
 	msgHeader := messageHeader(MESSAGE_TYPE_GETKDATA_REQUEST, int64(len(msgBody)))
-	utils.Log("[QueryHistoryKDataPage] query data from baostock param " + msgBody + " " + msgHeader)
+	utils.Log("[QueryHistoryKDataPage] query history k data from baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
 	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
@@ -186,8 +186,112 @@ func (bc *BaostockConnection) QueryHistoryKDataPage(code, fields, startDate, end
 	if recieveData.ErrorCode != BSERR_SUCCESS {
 		return nil, fmt.Errorf("[QueryHistoryKDataPage] return error code is not 0 %+v", recieveData)
 	}
-	utils.Log("[Logout] query data from baostock success")
-	return recieveData, nil
+	response, err := recieveData.GetQueryHistoryKDataResponse()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryHistoryKDataPage] recieveData.GetQueryHistoryKDataResponse fail\n\t%s", err)
+	}
+	utils.Log("[QueryHistoryKDataPage] query history k data baostock success")
+	return response, nil
+}
+
+func (bc *BaostockConnection) QueryTradeDates(startDate, endDate string) (*QueryTradeDatesResponse, error) {
+	if bc == nil || bc.connection == nil {
+		return nil, fmt.Errorf("[QueryTradeDates] bc is nil or connection is nil")
+	}
+	if startDate == "" {
+		startDate = DEFAULT_START_DATE
+	} else {
+		_, err := time.Parse("2006-01-02", startDate)
+		if err != nil {
+			return nil, fmt.Errorf("[QueryTradeDates] time.Parse fail %s", err)
+		}
+	}
+	if endDate == "" {
+		endDate = time.Now().Format("2006-01-02")
+	} else {
+		_, err := time.Parse("2006-01-02", endDate)
+		if err != nil {
+			return nil, fmt.Errorf("[QueryTradeDates] time.Parse fail %s", err)
+		}
+	}
+	utils.Log("[QueryTradeDates] querying trade dates from baostock ...")
+	if bc.user == "" {
+		return nil, fmt.Errorf("[QueryTradeDates] bc.user is nil, not login")
+	}
+	msgBody := "query_trade_dates" + MESSAGE_SPLIT + bc.user + MESSAGE_SPLIT +
+		"1" + MESSAGE_SPLIT + strconv.FormatInt(BAOSTOCK_PER_PAGE_COUNT, 10) + MESSAGE_SPLIT +
+		startDate + MESSAGE_SPLIT + endDate + MESSAGE_SPLIT
+	msgHeader := messageHeader(MESSAGE_TYPE_QUERYTRADEDATES_REQUEST, int64(len(msgBody)))
+	utils.Log("[QueryTradeDates] query trade dates from baostock param " + msgBody + " " + msgHeader)
+	headBody := msgHeader + msgBody
+	crcSum := crc32.ChecksumIEEE([]byte(headBody))
+	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	if err != nil {
+		return nil, fmt.Errorf("[QueryTradeDates] bc.Write fail\n\t%s", err)
+	}
+	recieveBody, err := bc.Read()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryTradeDates] bc.Read fail\n\t%s", err)
+	}
+	recieveData, err := bc.DecodeRecieve(recieveBody)
+	if err != nil {
+		return nil, fmt.Errorf("[QueryTradeDates] bc.DecodeRecieve fail\n\t%s", err)
+	}
+	if recieveData.ErrorCode != BSERR_SUCCESS {
+		return nil, fmt.Errorf("[QueryTradeDates] return error code is not 0 %+v", recieveData)
+	}
+	response, err := recieveData.GetQueryTradeDatesResponse()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryTradeDates] recieveData.GetQueryTradeDatesResponse fail\n\t%s", err)
+	}
+	utils.Log("[QueryTradeDates] query trade dates from baostock success")
+	return response, nil
+}
+
+func (bc *BaostockConnection) QueryAllStock(date string) (*QueryAllStockResponse, error) {
+	if bc == nil || bc.connection == nil {
+		return nil, fmt.Errorf("[QueryAllStock] bc is nil or connection is nil")
+	}
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	} else {
+		_, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			return nil, fmt.Errorf("[QueryAllStock] time.Parse fail %s", err)
+		}
+	}
+	utils.Log("[QueryAllStock] querying all stock from baostock ...")
+	if bc.user == "" {
+		return nil, fmt.Errorf("[QueryAllStock] bc.user is nil, not login")
+	}
+	msgBody := "query_all_stock" + MESSAGE_SPLIT + bc.user + MESSAGE_SPLIT +
+		"1" + MESSAGE_SPLIT + strconv.FormatInt(BAOSTOCK_PER_PAGE_COUNT, 10) + MESSAGE_SPLIT +
+		date + MESSAGE_SPLIT
+	msgHeader := messageHeader(MESSAGE_TYPE_QUERYALLSTOCK_REQUEST, int64(len(msgBody)))
+	utils.Log("[QueryAllStock] query all stock from baostock param " + msgBody + " " + msgHeader)
+	headBody := msgHeader + msgBody
+	crcSum := crc32.ChecksumIEEE([]byte(headBody))
+	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	if err != nil {
+		return nil, fmt.Errorf("[QueryAllStock] bc.Write fail\n\t%s", err)
+	}
+	recieveBody, err := bc.Read()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryAllStock] bc.Read fail\n\t%s", err)
+	}
+	recieveData, err := bc.DecodeRecieve(recieveBody)
+	if err != nil {
+		return nil, fmt.Errorf("[QueryAllStock] bc.DecodeRecieve fail\n\t%s", err)
+	}
+	if recieveData.ErrorCode != BSERR_SUCCESS {
+		return nil, fmt.Errorf("[QueryAllStock] return error code is not 0 %+v", recieveData)
+	}
+	response, err := recieveData.GetQueryAllStockResponse()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryAllStock] recieveData.GetQueryAllStockResponse fail\n\t%s", err)
+	}
+	utils.Log("[QueryAllStock] query all stock from baostock success")
+	return response, nil
 }
 
 func (bc *BaostockConnection) Write(data []byte) (int64, error) {
@@ -257,7 +361,7 @@ func (bc *BaostockConnection) DecodeRecieve(data []byte) (*RecieveData, error) {
 		bodyStr = string(data[MESSAGE_HEADER_LENGTH:])
 	}
 	bodyArr := strings.Split(bodyStr, MESSAGE_SPLIT)
-	utils.Log(fmt.Sprint("[DecodeRecieve] recive data body ", bodyArr))
+	// utils.Log(fmt.Sprint("[DecodeRecieve] recive data body ", bodyArr))
 	if len(bodyArr) < 2 {
 		return nil, fmt.Errorf("[DecodeRecieve] data is error %s", string(data))
 	}
@@ -269,9 +373,9 @@ func (bc *BaostockConnection) DecodeRecieve(data []byte) (*RecieveData, error) {
 			ret.DataList = append(ret.DataList, bodyArr[i])
 		}
 	}
-	err = ret.GetStructData()
+	err = ret.GetResponse()
 	if err != nil {
-		return nil, fmt.Errorf("[DecodeRecieve] ret.GetStructData fail\n\t%s", err)
+		return nil, fmt.Errorf("[DecodeRecieve] ret.GetResponse fail\n\t%s", err)
 	}
 	return ret, nil
 }
