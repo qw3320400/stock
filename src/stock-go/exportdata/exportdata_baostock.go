@@ -13,8 +13,10 @@ import (
 
 const (
 	StartDate = "2008-01-01"
+	EndData   = "2016-06-01"
 
-	DataPath = "/Users/k/Desktop/code/stock/data/baostock"
+	// DataPath = "/Users/k/Desktop/code/stock/data/baostock"
+	DataPath = "/root/stock/data/baostock"
 
 	AllStockDate     = "2020-04-17"
 	AllStockPath     = "allstock"
@@ -25,6 +27,8 @@ const (
 
 	StockPath     = "stock/%d/%d"
 	StockFileName = "%s:%s:%s:%s.csv"
+
+	ErrorPath = "error"
 )
 
 var (
@@ -84,14 +88,14 @@ func ExportBaostockData() error {
 	if err != nil {
 		return fmt.Errorf("[ExportBaostockData] time.Parse fail\n\t%s", err)
 	}
-	endTime := time.Now()
-	tradeDateFileName := fmt.Sprintf(TradeDateFileName, endTime.Format("2006-01-02"))
+	nowTime := time.Now()
+	tradeDateFileName := fmt.Sprintf(TradeDateFileName, nowTime.Format("2006-01-02"))
 	tradeDateFilePath := filepath.Join(DataPath, TradeDatePath)
 	err = os.MkdirAll(tradeDateFilePath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("[ExportBaostockData] os.MkdirAll fail\n\t%s", err)
 	}
-	tradeDateResponse, err := bc.QueryTradeDates(startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	tradeDateResponse, err := bc.QueryTradeDates(startTime.Format("2006-01-02"), nowTime.Format("2006-01-02"))
 	if err != nil || tradeDateResponse.Rows == nil {
 		return fmt.Errorf("[ExportBaostockData] bc.QueryTradeDates fail\n\t%s", err)
 	}
@@ -107,6 +111,11 @@ func ExportBaostockData() error {
 	utils.Log("[ExportBaostockData] write file success " + tradeDateFileName)
 
 	// k data
+	startTime = time.Date(startTime.Year(), startTime.Month(), int(1), int(0), int(0), int(0), int(0), time.UTC)
+	endTime, err := time.Parse("2006-01-02", EndData)
+	if err != nil {
+		return fmt.Errorf("[ExportBaostockData] time.Parse fail\n\t%s", err)
+	}
 	endTime = time.Date(endTime.Year(), endTime.Month(), int(1), int(0), int(0), int(0), int(0), time.UTC)
 	for {
 		// check if break
@@ -169,6 +178,11 @@ func queryAndSaveBaostockKData(bc *baostock.BaostockConnection, code string, sta
 		if err == baostock.QueryTimeoutErr {
 			// 读取超时不中断
 			fileData = []byte("query data timeout error")
+			// 记录error的
+			err = ioutil.WriteFile(filepath.Join(DataPath, ErrorPath, stockFileName), fileData, os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("[queryAndSaveBaostockKData] ioutil.WriteFile fail\n\t%s", err)
+			}
 		} else {
 			fileData, err = baostockResponseToFileByte(stockResponse.Fields, stockResponse.Rows.Recode)
 			if err != nil {
