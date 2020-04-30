@@ -190,14 +190,9 @@ func queryAndSaveBaostockKData(bc *baostock.BaostockConnection, code string, sta
 				return fmt.Errorf("[queryAndSaveBaostockKData] ioutil.WriteFile fail\n\t%s", err)
 			}
 			// 连接已经bock 需要重连
-			bc.CloseConnection()
-			bc, err = baostock.NewBaostockConnection()
+			err = bc.ReConnect()
 			if err != nil {
-				return fmt.Errorf("[queryAndSaveBaostockKData] baostock.NewBaostockConnection fail\n\t%s", err)
-			}
-			err = bc.Login("", "", 0)
-			if err != nil {
-				return fmt.Errorf("[queryAndSaveBaostockKData] bc.Login fail\n\t%s", err)
+				return fmt.Errorf("[queryAndSaveBaostockKData] bc.ReConnect fail\n\t%s", err)
 			}
 		} else {
 			fileData, err = baostockResponseToFileByte(stockResponse.Fields, stockResponse.Rows.Recode)

@@ -21,15 +21,29 @@ type BaostockConnection struct {
 }
 
 func NewBaostockConnection() (*BaostockConnection, error) {
-	utils.Log("[NewBaostockConnection] connecting to baostock ...")
 	bc := &BaostockConnection{}
+	err := bc.Connect()
+	if err != nil {
+		return nil, fmt.Errorf("[Connect] bc.Connect fail\n\t%s", err)
+	}
+	return bc, nil
+}
+
+func (bc *BaostockConnection) Connect() error {
+	if bc == nil {
+		return fmt.Errorf("[Connect] bc is nil")
+	}
+	if bc.connection != nil {
+		return nil
+	}
+	utils.Log("[Connect] connecting to baostock ...")
 	connection, err := net.Dial("tcp", fmt.Sprintf("%s:%d", BAOSTOCK_SERVER_IP, BAOSTOCK_SERVER_PORT))
 	if err != nil {
-		return nil, fmt.Errorf("[NewBaostockConnection] net.Dial fail\n\t%s", err)
+		return fmt.Errorf("[Connect] net.Dial fail\n\t%s", err)
 	}
 	bc.connection = connection
-	utils.Log("[NewBaostockConnection] connected to baostock")
-	return bc, nil
+	utils.Log("[Connect] connected to baostock")
+	return nil
 }
 
 func (bc *BaostockConnection) CloseConnection() error {
@@ -41,7 +55,25 @@ func (bc *BaostockConnection) CloseConnection() error {
 	if err != nil {
 		return fmt.Errorf("[CloseConnection] Close fail\n\t%s", err)
 	}
+	bc.connection = nil
 	utils.Log("[CloseConnection] baostock connection closed")
+	return nil
+}
+
+func (bc *BaostockConnection) ReConnect() error {
+	if bc == nil || bc.connection == nil {
+		return fmt.Errorf("[ReConnect] bc is nil or connection is nil")
+	}
+	utils.Log("[ReConnect] reconnectiong to baostock ...")
+	err := bc.CloseConnection()
+	if err != nil {
+		return fmt.Errorf("[ReConnect] bc.CloseConnection fail\n\t%s", err)
+	}
+	err = bc.Connect()
+	if err != nil {
+		return fmt.Errorf("[ReConnect] bc.Connect fail\n\t%s", err)
+	}
+	utils.Log("[ReConnect] reconnected to baostock")
 	return nil
 }
 
