@@ -170,8 +170,10 @@ func queryAndSaveBaostockKData(bc *baostock.BaostockConnection, code string, sta
 	// 如果文件已存在则跳过
 	if _, err := os.Stat(stockFile); os.IsNotExist(err) {
 		stockResponse, err := bc.QueryHistoryKDataPlusWithTimeOut(code, frequency[1], startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), frequency[0], adjustFlag, 60)
-		if (err != nil && err != baostock.QueryTimeoutErr) || stockResponse.Rows == nil {
-			return fmt.Errorf("[queryAndSaveBaostockKData] bc.QueryTradeDates fail\n\t%s", err)
+		if err != nil || stockResponse.Rows == nil {
+			if err != baostock.QueryTimeoutErr {
+				return fmt.Errorf("[queryAndSaveBaostockKData] bc.QueryTradeDates fail\n\t%s", err)
+			}
 		}
 		utils.Log("[queryAndSaveBaostockKData] writing file ... " + stockFileName)
 		var fileData []byte
