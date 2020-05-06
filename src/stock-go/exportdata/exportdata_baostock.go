@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	StartDate = "2008-01-01"
-	EndData   = "2016-06-01"
+	StartDate = "2020-04-01"
+	EndData   = "2020-04-30"
 
 	// DataPath = "/Users/k/Desktop/code/stock/data/baostock"
 	DataPath = "/root/stock/data/baostock"
