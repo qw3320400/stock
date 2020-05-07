@@ -359,6 +359,54 @@ func (bc *BaostockConnection) QueryAllStock(date string) (*QueryAllStockResponse
 	return response, nil
 }
 
+func (bc *BaostockConnection) QueryStockIndustry(code, date string) (*QueryStockIndustryResponse, error) {
+	if bc == nil || bc.connection == nil {
+		return nil, fmt.Errorf("[QueryStockIndustry] bc is nil or connection is nil")
+	}
+
+	if code == "" {
+		return nil, fmt.Errorf("[QueryStockIndustry] code is nil")
+	}
+	if date != "" {
+		_, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			return nil, fmt.Errorf("[QueryStockIndustry] time.Parse fail %s", err)
+		}
+	}
+	utils.Log("[QueryStockIndustry] querying stock industry from baostock ...")
+	if bc.user == "" {
+		return nil, fmt.Errorf("[QueryStockIndustry] bc.user is nil, not login")
+	}
+	msgBody := "query_stock_industry" + MESSAGE_SPLIT + bc.user + MESSAGE_SPLIT +
+		"1" + MESSAGE_SPLIT + strconv.FormatInt(BAOSTOCK_PER_PAGE_COUNT, 10) + MESSAGE_SPLIT +
+		code + MESSAGE_SPLIT + date
+	msgHeader := messageHeader(MESSAGE_TYPE_QUERYSTOCKINDUSTRY_REQUEST, int64(len(msgBody)))
+	utils.Log("[QueryStockIndustry] query stock industry from baostock param " + msgBody + " " + msgHeader)
+	headBody := msgHeader + msgBody
+	crcSum := crc32.ChecksumIEEE([]byte(headBody))
+	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	if err != nil {
+		return nil, fmt.Errorf("[QueryStockIndustry] bc.Write fail\n\t%s", err)
+	}
+	recieveBody, err := bc.Read()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryStockIndustry] bc.Read fail\n\t%s", err)
+	}
+	recieveData, err := bc.DecodeRecieve(recieveBody)
+	if err != nil {
+		return nil, fmt.Errorf("[QueryStockIndustry] bc.DecodeRecieve fail\n\t%s", err)
+	}
+	if recieveData.ErrorCode != BSERR_SUCCESS {
+		return nil, fmt.Errorf("[QueryStockIndustry] return error code is not 0 %+v", recieveData)
+	}
+	response, err := recieveData.GetQueryStockIndustryResponse()
+	if err != nil {
+		return nil, fmt.Errorf("[QueryStockIndustry] recieveData.GetQueryStockIndustryResponse fail\n\t%s", err)
+	}
+	utils.Log("[QueryStockIndustry] query stock industry from baostock success")
+	return response, nil
+}
+
 func (bc *BaostockConnection) Write(data []byte) (int64, error) {
 	if bc == nil || bc.connection == nil {
 		return 0, fmt.Errorf("[Write] bc is nil or connection is nil")

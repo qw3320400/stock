@@ -6,6 +6,7 @@ data/*
 *.dmg
 *.swp
 .vscode/*
+res
 
 # Logs and databases #
 ######################

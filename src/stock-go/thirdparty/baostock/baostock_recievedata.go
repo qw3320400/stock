@@ -33,6 +33,8 @@ func (rd *RecieveData) GetResponse() error {
 		rd.Response, err = rd.SetQueryTradeDatesResponse()
 	case MESSAGE_TYPE_QUERYALLSTOCK_RESPONSE:
 		rd.Response, err = rd.SetQueryAllStockResponse()
+	case MESSAGE_TYPE_QUERYSTOCKINDUSTRY_RESPONSE:
+		rd.Response, err = rd.SetQueryStockIndustryResponse()
 	}
 	if err != nil {
 		return fmt.Errorf("[GetResponse] set %s data process fail\n\t%s", rd.MessageType, err)
@@ -214,7 +216,7 @@ func (rd *RecieveData) SetQueryAllStockResponse() (*QueryAllStockResponse, error
 	if rd == nil || rd.DataList == nil {
 		return nil, fmt.Errorf("[SetQueryAllStockResponse] rd or rd.DataList is nil")
 	}
-	if rd.DataList == nil || len(rd.DataList) < 8 {
+	if rd.DataList == nil || len(rd.DataList) < 7 {
 		return nil, fmt.Errorf("[SetQueryAllStockResponse] rd.DataList error %+v", rd.DataList)
 	}
 	data := &QueryAllStockResponse{
@@ -238,7 +240,7 @@ func (rd *RecieveData) SetQueryAllStockResponse() (*QueryAllStockResponse, error
 			return nil, fmt.Errorf("[SetQueryAllStockResponse] json.Unmarshal fail %s", err)
 		}
 	}
-	rd.DataList[7] = strings.TrimSpace(rd.DataList[6])
+	rd.DataList[6] = strings.TrimSpace(rd.DataList[6])
 	data.Fields = strings.Split(rd.DataList[6], ",")
 	return data, nil
 }
@@ -250,6 +252,66 @@ func (rd *RecieveData) GetQueryAllStockResponse() (*QueryAllStockResponse, error
 	data, ok := rd.Response.(*QueryAllStockResponse)
 	if !ok {
 		return nil, fmt.Errorf("[GetQueryAllStockResponse] Response is not LoginData")
+	}
+	return data, nil
+}
+
+type QueryStockIndustryResponse struct {
+	Method       string
+	User         string
+	CurPageNum   int64
+	PerPageCount int64
+	Rows         *QueryStockIndustryResponseRows
+	Code         string
+	Date         string
+	Fields       []string
+}
+
+type QueryStockIndustryResponseRows struct {
+	Recode [][]string `json:"record"`
+}
+
+func (rd *RecieveData) SetQueryStockIndustryResponse() (*QueryStockIndustryResponse, error) {
+	if rd == nil || rd.DataList == nil {
+		return nil, fmt.Errorf("[SetQueryStockIndustryResponse] rd or rd.DataList is nil")
+	}
+	if rd.DataList == nil || len(rd.DataList) < 8 {
+		return nil, fmt.Errorf("[SetQueryStockIndustryResponse] rd.DataList error %+v", rd.DataList)
+	}
+	data := &QueryStockIndustryResponse{
+		Method: rd.DataList[0],
+		User:   rd.DataList[1],
+		Code:   rd.DataList[5],
+		Date:   rd.DataList[6],
+	}
+	var err error
+	data.CurPageNum, err = strconv.ParseInt(rd.DataList[2], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("[SetQueryStockIndustryResponse] strconv.ParseInt fail %s", err)
+	}
+	data.PerPageCount, err = strconv.ParseInt(rd.DataList[3], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("[SetQueryStockIndustryResponse] strconv.ParseInt fail %s", err)
+	}
+	data.Rows = &QueryStockIndustryResponseRows{}
+	if len(rd.DataList[4]) > 0 {
+		err = json.Unmarshal([]byte(rd.DataList[4]), data.Rows)
+		if err != nil {
+			return nil, fmt.Errorf("[SetQueryStockIndustryResponse] json.Unmarshal fail %s", err)
+		}
+	}
+	rd.DataList[7] = strings.TrimSpace(rd.DataList[7])
+	data.Fields = strings.Split(rd.DataList[7], ",")
+	return data, nil
+}
+
+func (rd *RecieveData) GetQueryStockIndustryResponse() (*QueryStockIndustryResponse, error) {
+	if rd == nil || rd.Response == nil {
+		return nil, fmt.Errorf("[GetQueryStockIndustryResponse] rd or rd.Response is nil")
+	}
+	data, ok := rd.Response.(*QueryStockIndustryResponse)
+	if !ok {
+		return nil, fmt.Errorf("[GetQueryStockIndustryResponse] Response is not QueryStockIndustryResponse")
 	}
 	return data, nil
 }
