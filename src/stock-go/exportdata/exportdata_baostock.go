@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	StartDate = "2020-04-01"
-	EndData   = "2020-04-30"
+	StartDate = "2020-02-01"
+	EndData   = "2020-02-20"
 
-	// DataPath = "/Users/k/Desktop/code/stock/data/baostock"
-	DataPath = "/root/stock/data/baostock"
+	DataPath = "/Users/k/Desktop/code/stock/data/baostock"
+	// DataPath = "/root/stock/data/baostock"
 
 	AllStockDate     = "2020-04-17"
 	AllStockPath     = "allstock"
