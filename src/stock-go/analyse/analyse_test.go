@@ -2,8 +2,8 @@ package analyse
 
 import "testing"
 
-func TestRelativeIndustry(t *testing.T) {
-	err := RelativeIndustry()
+func TestBuildRelativeLineChart(t *testing.T) {
+	err := BuildRelativeLineChart()
 	if err != nil {
 		t.Fatal(err)
 	}
