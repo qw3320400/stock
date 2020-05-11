@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
+)
+
+var (
+	ErrFileNotExist = fmt.Errorf("No such file or directory")
 )
 
 type CommonCSVFile struct {
@@ -14,6 +19,9 @@ type CommonCSVFile struct {
 func ReadCommonCSVFile(file string) (*CommonCSVFile, error) {
 	if file == "" {
 		return nil, fmt.Errorf("[ReadCommonCSVFile] file is nil")
+	}
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return nil, ErrFileNotExist
 	}
 	rowData, err := ioutil.ReadFile(file)
 	if err != nil || len(rowData) <= 0 {
