@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript">
+            google.charts.load('current', {'packages':['line']});
+            google.charts.setOnLoadCallback(drawChart);
+  
+            function drawChart() {
+                var data = google.visualization.arrayToDataTable(
+                /*
+                [
+                    ['Year', 'Sales', 'Expenses'],
+                    ['2004',  1000,      400],
+                    ['2005',  1170,      460],
+                    ['2006',  660,       1120],
+                    ['2007',  1030,      540]
+                ]
+                */
+                {data}
+            );
+  
+            var options = {
+                width: 7000,
+                height: 300,
+            };
+  
+            var chart = new google.charts.Line(document.getElementById('curve_chart'));
+  
+            chart.draw(data, google.charts.Line.convertOptions(options));
+        }
+        </script>
+    </head>
+    <body>
+        <div id="curve_chart" style="width: 600px; height: 300px"></div>
+    </body>
+</html>
+  
+  
