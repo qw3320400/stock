@@ -29,7 +29,7 @@ type StockDataPrice struct {
 }
 
 func BuildRelativeLineChart() error {
-	startTimeStr := "2020-01-01"
+	startTimeStr := "2017-01-01"
 	endTimeStr := "2020-04-30"
 	startTime, err := time.Parse("2006-01-02", startTimeStr)
 	if err != nil {
@@ -58,7 +58,7 @@ func BuildRelativeLineChart() error {
 		if len(fileData.Data[i]) <= codeIdx || len(fileData.Data[i]) <= nameIdx {
 			return fmt.Errorf("[BuildRelativeLineChart] data error %s", fileData.Data[i])
 		}
-		if utils.StringIsIn(fileData.Data[i][nameIdx], "贵州茅台", "五粮液") {
+		if utils.StringIsIn(fileData.Data[i][codeIdx], "sh.000300", "sh.000001", "sz.399001", "sh.000016", "sh.000905") {
 			codeList = append(codeList, StockData{
 				Code: fileData.Data[i][codeIdx],
 				Name: fileData.Data[i][nameIdx],
@@ -79,16 +79,19 @@ func BuildRelativeLineChart() error {
 			}
 			codeFile := filepath.Join(exportdata.DataPath,
 				fmt.Sprintf(exportdata.StockPath, tmpStartDate.Year(), tmpStartDate.Month()),
-				fmt.Sprintf(exportdata.StockFileName, codeList[i].Code, tmpStartDate.Format("2006-01"), "5", "1"))
+				fmt.Sprintf(exportdata.StockFileName, codeList[i].Code, tmpStartDate.Format("2006-01"), "d", "1"))
 			codeData, err := utils.ReadCommonCSVFile(codeFile)
 			if err != nil && err != utils.ErrFileNotExist {
 				return fmt.Errorf("[BuildRelativeLineChart] utils.ReadCommonCSVFile fail\n\t%s", err)
 			}
 			if err != utils.ErrFileNotExist && codeData != nil {
-				var openIdx, dateIdx int
+				var closeIdx, dateIdx int
 				for j := 0; j < len(codeData.Column); j++ {
-					if codeData.Column[j] == "open" {
-						openIdx = j
+					// if codeData.Column[j] == "open" {
+					// 	openIdx = j
+					// }
+					if codeData.Column[j] == "close" {
+						closeIdx = j
 					}
 					if codeData.Column[j] == "date" {
 						dateIdx = j
@@ -97,7 +100,7 @@ func BuildRelativeLineChart() error {
 				for j := 0; j < len(codeData.Data); j++ {
 					codeList[i].Price = append(codeList[i].Price, &StockDataPrice{
 						Date:  codeData.Data[j][dateIdx],
-						Price: codeData.Data[j][openIdx],
+						Price: codeData.Data[j][closeIdx],
 					})
 				}
 			}
@@ -143,14 +146,14 @@ func BuildRelativeLineChart() error {
 		dateStr := startTime.Format("2006-01-02")
 		codeMap := dateCodeMap[dateStr]
 		if codeMap != nil {
-			for i := 0; i < 48; i++ {
+			for i := 0; i < 1; i++ {
 				priceList := []string{}
 				for j := 0; j < len(codeList); j++ {
 					dateCode := codeMap[codeList[j].Code]
 					if dateCode == nil || len(dateCode.Price) <= 0 {
 						priceList = append(priceList, "0")
 					} else {
-						if len(dateCode.Price) != 48 || basePriceMap[codeList[j].Code] == "" {
+						if len(dateCode.Price) != 1 || basePriceMap[codeList[j].Code] == "" {
 							return fmt.Errorf("[BuildRelativeLineChart] data error %+v", dateCode)
 						}
 						detaPrice, err := utils.GetDeltaPriceString(basePriceMap[codeList[j].Code], dateCode.Price[i].Price)
