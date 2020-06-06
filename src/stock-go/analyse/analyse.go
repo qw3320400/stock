@@ -30,7 +30,7 @@ type StockDataPrice struct {
 
 func BuildRelativeLineChart() error {
 	startTimeStr := "2017-01-01"
-	endTimeStr := "2020-04-30"
+	endTimeStr := "2020-05-29"
 	startTime, err := time.Parse("2006-01-02", startTimeStr)
 	if err != nil {
 		return fmt.Errorf("[BuildRelativeLineChart] time.Parse fail\n\t%s", err)
@@ -39,7 +39,7 @@ func BuildRelativeLineChart() error {
 	if err != nil {
 		return fmt.Errorf("[BuildRelativeLineChart] time.Parse fail\n\t%s", err)
 	}
-	file := filepath.Join(exportdata.DataPath, exportdata.AllStockIndustryPath, fmt.Sprintf(exportdata.AllStockIndustryFileName, exportdata.AllStockDate))
+	file := filepath.Join(exportdata.DataPath, exportdata.AllStockIndustryPath, fmt.Sprintf(exportdata.AllStockFileName, exportdata.AllStockDate))
 	fileData, err := utils.ReadCommonCSVFile(file)
 	if err != nil {
 		return fmt.Errorf("[BuildRelativeLineChart] utils.ReadCommonCSVFile fail\n\t%s", err)

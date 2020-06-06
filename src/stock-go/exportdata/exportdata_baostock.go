@@ -18,7 +18,7 @@ const (
 	DataPath = "/Users/k/Desktop/code/stock/data/baostock"
 	// DataPath = "/root/stock/data/baostock"
 
-	AllStockDate     = "2020-04-17"
+	AllStockDate     = "2020-05-29"
 	AllStockPath     = "allstock"
 	AllStockFileName = "allstock:%s.csv"
 
