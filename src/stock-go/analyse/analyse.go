@@ -33,16 +33,16 @@ func BuildRelativeLineChart() error {
 	endTimeStr := "2020-05-29"
 	startTime, err := time.Parse("2006-01-02", startTimeStr)
 	if err != nil {
-		return fmt.Errorf("[BuildRelativeLineChart] time.Parse fail\n\t%s", err)
+		return utils.Errorf(err, "time.Parse fail")
 	}
 	endTime, err := time.Parse("2006-01-02", endTimeStr)
 	if err != nil {
-		return fmt.Errorf("[BuildRelativeLineChart] time.Parse fail\n\t%s", err)
+		return utils.Errorf(err, "time.Parse fail")
 	}
 	file := filepath.Join(exportdata.DataPath, exportdata.AllStockIndustryPath, fmt.Sprintf(exportdata.AllStockFileName, exportdata.AllStockDate))
 	fileData, err := utils.ReadCommonCSVFile(file)
 	if err != nil {
-		return fmt.Errorf("[BuildRelativeLineChart] utils.ReadCommonCSVFile fail\n\t%s", err)
+		return utils.Errorf(err, "utils.ReadCommonCSVFile fail")
 	}
 	var codeIdx, nameIdx int
 	for i := 0; i < len(fileData.Column); i++ {
@@ -56,7 +56,7 @@ func BuildRelativeLineChart() error {
 	codeList := []StockData{}
 	for i := 0; i < len(fileData.Data); i++ {
 		if len(fileData.Data[i]) <= codeIdx || len(fileData.Data[i]) <= nameIdx {
-			return fmt.Errorf("[BuildRelativeLineChart] data error %s", fileData.Data[i])
+			return utils.Errorf(nil, "data error %s", fileData.Data[i])
 		}
 		if utils.StringIsIn(fileData.Data[i][codeIdx], "sh.000300", "sh.000001", "sz.399001", "sh.000016", "sh.000905") {
 			codeList = append(codeList, StockData{
@@ -66,7 +66,7 @@ func BuildRelativeLineChart() error {
 		}
 	}
 	if err != nil {
-		return fmt.Errorf("[BuildRelativeLineChart] time.Parse fail\n\t%s", err)
+		return utils.Errorf(err, "time.Parse fail")
 	}
 	// 读取数据
 	for i := 0; i < len(codeList); i++ {
@@ -82,7 +82,7 @@ func BuildRelativeLineChart() error {
 				fmt.Sprintf(exportdata.StockFileName, codeList[i].Code, tmpStartDate.Format("2006-01"), "d", "1"))
 			codeData, err := utils.ReadCommonCSVFile(codeFile)
 			if err != nil && err != utils.ErrFileNotExist {
-				return fmt.Errorf("[BuildRelativeLineChart] utils.ReadCommonCSVFile fail\n\t%s", err)
+				return utils.Errorf(err, "utils.ReadCommonCSVFile fail")
 			}
 			if err != utils.ErrFileNotExist && codeData != nil {
 				var closeIdx, dateIdx int
@@ -154,11 +154,11 @@ func BuildRelativeLineChart() error {
 						priceList = append(priceList, "0")
 					} else {
 						if len(dateCode.Price) != 1 || basePriceMap[codeList[j].Code] == "" {
-							return fmt.Errorf("[BuildRelativeLineChart] data error %+v", dateCode)
+							return utils.Errorf(nil, "data error %+v", dateCode)
 						}
 						detaPrice, err := utils.GetDeltaPriceString(basePriceMap[codeList[j].Code], dateCode.Price[i].Price)
 						if err != nil {
-							return fmt.Errorf("[BuildRelativeLineChart] utils.GetDeltaPriceString fail\n\t%s", err)
+							return utils.Errorf(err, "utils.GetDeltaPriceString fail")
 						}
 						priceList = append(priceList, detaPrice)
 					}
@@ -171,12 +171,12 @@ func BuildRelativeLineChart() error {
 	chartDataStr = chartDataStr[:len(chartDataStr)-1] + "\n\t]"
 	chartData, err := ioutil.ReadFile(filepath.Join(ResPath, LineChartFileName))
 	if err != nil {
-		return fmt.Errorf("[BuildRelativeLineChart] ioutil.ReadFile fail\n\t%s", err)
+		return utils.Errorf(err, "ioutil.ReadFile fail")
 	}
 	chartData = bytes.Replace(chartData, []byte("{data}"), []byte(chartDataStr), -1)
 	err = ioutil.WriteFile(filepath.Join(ResPath, "test.html"), chartData, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("[BuildRelativeLineChart] ioutil.WriteFile fail\n\t%s", err)
+		return utils.Errorf(err, "ioutil.WriteFile fail")
 	}
 	return nil
 }

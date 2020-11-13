@@ -18,25 +18,25 @@ type CommonCSVFile struct {
 
 func ReadCommonCSVFile(file string) (*CommonCSVFile, error) {
 	if file == "" {
-		return nil, fmt.Errorf("[ReadCommonCSVFile] file is nil")
+		return nil, Errorf(nil, "file is nil")
 	}
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return nil, ErrFileNotExist
 	}
 	rowData, err := ioutil.ReadFile(file)
 	if err != nil || len(rowData) <= 0 {
-		return nil, fmt.Errorf("[ReadCommonCSVFile] ioutil.ReadFile fail\n\t%s", err)
+		return nil, Errorf(err, "ioutil.ReadFile fail")
 	}
 	lines := bytes.Split(rowData, []byte("\n"))
 	if len(lines) <= 0 {
-		return nil, fmt.Errorf("[ReadCommonCSVFile] no file lines %s", file)
+		return nil, Errorf(nil, "no file lines %s", file)
 	}
 	if bytes.Contains(lines[0], []byte("error")) {
-		return nil, fmt.Errorf("[ReadCommonCSVFile] file data error %s", file)
+		return nil, Errorf(nil, "file data error %s", file)
 	}
 	columns := bytes.Split(lines[0], []byte(","))
 	if len(columns) <= 0 {
-		return nil, fmt.Errorf("[ReadCommonCSVFile] file data error %s", file)
+		return nil, Errorf(nil, "file data error %s", file)
 	}
 	ret := &CommonCSVFile{
 		Column: []string{},
@@ -52,7 +52,7 @@ func ReadCommonCSVFile(file string) (*CommonCSVFile, error) {
 		}
 		rowColumn := bytes.Split(lines[i], []byte(","))
 		if len(rowColumn) != len(ret.Column) {
-			return nil, fmt.Errorf("[ReadCommonCSVFile] file data error %s %s", lines[i], file)
+			return nil, Errorf(nil, "file data error %s %s", lines[i], file)
 		}
 		row := []string{}
 		for j := 0; j < len(rowColumn); j++ {

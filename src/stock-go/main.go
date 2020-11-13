@@ -15,7 +15,7 @@ func main() {
 	// 导数据
 	err := exportdata.ExportBaostockData()
 	if err != nil {
-		utils.LogErr(fmt.Sprint("[main] exportdata.ExportBaostockData fail", err))
+		utils.LogErr(fmt.Sprint("exportdata.ExportBaostockData fail", err))
 		return
 	}
 
