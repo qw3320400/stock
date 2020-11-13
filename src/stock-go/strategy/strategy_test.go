@@ -1,12 +1,11 @@
 package strategy
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestStrategy(t *testing.T) {
-	s := &DefaultStrategy{
-		StartTimeStr: "1111",
-	}
-	err := s.Run()
+	err := compareWeekDayAndDefault()
 	if err != nil {
 		t.Fatal(err)
 	}

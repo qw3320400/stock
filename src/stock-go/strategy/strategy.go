@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"encoding/json"
 	"stock-go/utils"
 	"time"
 )
@@ -11,10 +12,6 @@ const (
 	DefaultCode         = "sh.000300"
 )
 
-type Strategy interface {
-	Run() error
-}
-
 type StrategyResult struct {
 	LineData []*PointData
 }
@@ -24,52 +21,60 @@ type PointData struct {
 	Value float64
 }
 
-type DefaultStrategy struct {
-	// input
-	StartTimeStr string
-	EndTimeStr   string
-	Code         string
-	// output
-	Result *StrategyResult
-	// internal
-	startTime time.Time
-	endTime   time.Time
+type Strategy interface {
+	Init() error
+	LoadData() error
+	Step() (bool, error)
+	Final() error
 }
 
-func (s *DefaultStrategy) Run() error {
+func Run(s Strategy) error {
 	if s == nil {
 		return utils.Errorf(nil, "s is nil")
 	}
-	if s.StartTimeStr == "" {
-		s.StartTimeStr = DefaultStartTimeStr
-	}
-	if s.EndTimeStr == "" {
-		s.EndTimeStr = DefaultEndTimeStr
-	}
-	if s.Code == "" {
-		s.Code = DefaultCode
-	}
-	var (
-		err error
-	)
-	s.startTime, err = time.Parse("2006-01-02", s.StartTimeStr)
+	err := s.Init()
 	if err != nil {
-		return utils.Errorf(err, "time.Parse fail")
+		return utils.Errorf(err, "s.Init fail")
 	}
-	s.endTime, err = time.Parse("2006-01-02", s.EndTimeStr)
+	err = s.LoadData()
 	if err != nil {
-		return utils.Errorf(err, "time.Parse fail")
+		return utils.Errorf(err, "s.LoadData fail")
 	}
-	s.LoadData()
-
+	for {
+		ok, err := s.Step()
+		if err != nil {
+			return utils.Errorf(err, "s.Step fail")
+		}
+		if !ok {
+			break
+		}
+	}
+	err = s.Final()
+	if err != nil {
+		return utils.Errorf(err, "s.Final fail")
+	}
 	return nil
 }
 
-func (s *DefaultStrategy) LoadData() error {
-	if s == nil {
-		return utils.Errorf(nil, "s is nil")
-	}
-	utils.Log("000001")
+func compareWeekDayAndDefault() error {
+	chartData := [][]interface{}{}
 
+	s := &DefaultStrategy{}
+	err := Run(s)
+	if err != nil || s.Result == nil {
+		return utils.Errorf(err, "Run fail")
+	}
+	defaultData := s.Result
+
+	chartData = append(chartData, []interface{}{"Date", s.Code})
+	for i := 0; i < len(defaultData.LineData); i++ {
+		chartData = append(chartData, []interface{}{defaultData.LineData[i].Time, defaultData.LineData[i].Value})
+	}
+
+	body, err := json.Marshal(chartData)
+	if err != nil {
+		return utils.Errorf(err, "json.Marshal fail")
+	}
+	utils.Log(string(body))
 	return nil
 }
