@@ -59,16 +59,30 @@ func Run(s Strategy) error {
 func compareWeekDayAndDefault() error {
 	chartData := [][]interface{}{}
 
-	s := &DefaultStrategy{}
-	err := Run(s)
-	if err != nil || s.Result == nil {
+	ds := &DefaultStrategy{}
+	err := Run(ds)
+	if err != nil || ds.Result == nil {
 		return utils.Errorf(err, "Run fail")
 	}
-	defaultData := s.Result
+	defaultData := ds.Result
 
-	chartData = append(chartData, []interface{}{"Date", s.Code})
+	ws := &WeekDayStrategy{}
+	err = Run(ws)
+	if err != nil || ws.Result == nil {
+		return utils.Errorf(err, "Run fail")
+	}
+	weekDayData := ws.Result
+
+	chartData = append(chartData, []interface{}{"Date", ds.Code, ws.Code + "_weekday"})
+	wsIdx := 0
 	for i := 0; i < len(defaultData.LineData); i++ {
-		chartData = append(chartData, []interface{}{defaultData.LineData[i].Time, defaultData.LineData[i].Value})
+		for j := wsIdx; j < len(weekDayData.LineData); j++ {
+			if weekDayData.LineData[j].Time == defaultData.LineData[i].Time {
+				wsIdx = j
+				break
+			}
+		}
+		chartData = append(chartData, []interface{}{defaultData.LineData[i].Time, defaultData.LineData[i].Value, weekDayData.LineData[wsIdx].Value})
 	}
 
 	body, err := json.Marshal(chartData)

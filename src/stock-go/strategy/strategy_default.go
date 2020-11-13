@@ -1,7 +1,6 @@
 package strategy
 
 import (
-	"fmt"
 	"stock-go/exportdata"
 	"stock-go/utils"
 	"strconv"
@@ -69,7 +68,6 @@ func (s *DefaultStrategy) LoadData() error {
 	if err != nil {
 		return utils.Errorf(err, "exportdata.LoadBaostockLocalData fail")
 	}
-	utils.Log(fmt.Sprintf("%+v", len(s.baostockLocalData.StockDateList)))
 	return nil
 }
 
