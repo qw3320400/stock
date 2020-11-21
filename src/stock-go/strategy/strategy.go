@@ -2,18 +2,21 @@ package strategy
 
 import (
 	"encoding/json"
+	"fmt"
 	"stock-go/utils"
 	"time"
 )
 
 const (
-	DefaultStartTimeStr = "2017-01-01"
+	DefaultStartTimeStr = "2015-05-01"
 	DefaultEndTimeStr   = "2020-10-31"
 	DefaultCode         = "sh.000300"
 )
 
 type StrategyResult struct {
-	LineData []*PointData
+	AnualReturnRate float64
+	DrawDown        float64
+	LineData        []*PointData
 }
 
 type PointData struct {
@@ -73,7 +76,14 @@ func compareWeekDayAndDefault() error {
 	}
 	weekDayData := ws.Result
 
-	chartData = append(chartData, []interface{}{"Date", ds.Code, ws.Code + "_weekday"})
+	ws2 := &WeekDayStrategyV2{}
+	err = Run(ws2)
+	if err != nil || ws2.Result == nil {
+		return utils.Errorf(err, "Run fail")
+	}
+	weekDayDataV2 := ws2.Result
+
+	chartData = append(chartData, []interface{}{"Date", ds.Code, ws.Code + "_weekday", ws2.Code + "_weekday_v2"})
 	wsIdx := 0
 	for i := 0; i < len(defaultData.LineData); i++ {
 		for j := wsIdx; j < len(weekDayData.LineData); j++ {
@@ -82,7 +92,13 @@ func compareWeekDayAndDefault() error {
 				break
 			}
 		}
-		chartData = append(chartData, []interface{}{defaultData.LineData[i].Time, defaultData.LineData[i].Value, weekDayData.LineData[wsIdx].Value})
+		for j := wsIdx; j < len(weekDayDataV2.LineData); j++ {
+			if weekDayDataV2.LineData[j].Time == defaultData.LineData[i].Time {
+				wsIdx = j
+				break
+			}
+		}
+		chartData = append(chartData, []interface{}{defaultData.LineData[i].Time, defaultData.LineData[i].Value, weekDayData.LineData[wsIdx].Value, weekDayDataV2.LineData[wsIdx].Value})
 	}
 
 	body, err := json.Marshal(chartData)
@@ -90,5 +106,9 @@ func compareWeekDayAndDefault() error {
 		return utils.Errorf(err, "json.Marshal fail")
 	}
 	utils.Log(string(body))
+
+	utils.Log(fmt.Sprintf("%+v %+v %+v", ds.Code, defaultData.AnualReturnRate, defaultData.DrawDown))
+	utils.Log(fmt.Sprintf("%+v %+v %+v", ws.Code+"_weekday", weekDayData.AnualReturnRate, weekDayData.DrawDown))
+	utils.Log(fmt.Sprintf("%+v %+v %+v", ws2.Code+"_weekday_v2", weekDayDataV2.AnualReturnRate, weekDayDataV2.DrawDown))
 	return nil
 }

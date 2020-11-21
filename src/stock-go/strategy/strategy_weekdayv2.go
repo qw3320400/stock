@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-var _ Strategy = &WeekDayStrategy{}
+var _ Strategy = &WeekDayStrategyV2{}
 
-type WeekDayStrategy struct {
+type WeekDayStrategyV2 struct {
 	DefaultStrategy
 	lastValue     float64
 	lastCost      float64
 	lastValueList []float64
 }
 
-func (s *WeekDayStrategy) Step() (bool, error) {
+func (s *WeekDayStrategyV2) Step() (bool, error) {
 	if s == nil || s.baostockLocalData == nil || s.stepIndex < 0 {
 		return false, utils.Errorf(nil, "param error %+v", s)
 	}
@@ -39,13 +39,13 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 		return false, utils.Errorf(err, "trconv.ParseFloat fail")
 	}
 	s.lastValueList = append(s.lastValueList, close)
-	// 20日均值
-	var avg20 float64
-	if s.stepIndex-19 >= 0 {
-		for i := s.stepIndex; i >= s.stepIndex-19; i-- {
-			avg20 += s.lastValueList[i]
+	// 5日均值
+	var avg5 float64
+	if s.stepIndex-4 >= 0 {
+		for i := s.stepIndex; i >= s.stepIndex-4; i-- {
+			avg5 += s.lastValueList[i]
 		}
-		avg20 = avg20 / 20
+		avg5 = avg5 / 5
 	}
 	if s.stepIndex == 0 {
 		s.lastValue = 1
@@ -58,9 +58,9 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 	point.Value = s.lastValue
 	// 策略
 	var opt string = "-"
-	if avg20 > 0 && len(s.baostockLocalData.StockDateList) > s.stepIndex+1 {
+	if avg5 > 0 && len(s.baostockLocalData.StockDateList) > s.stepIndex+1 {
 		nextTradeDateWeekDay := s.baostockLocalData.StockDateList[s.stepIndex+1].Time.Weekday()
-		if avg20 < close {
+		if avg5 < close {
 			// 牛市收盘
 			if nextTradeDateWeekDay == time.Friday || nextTradeDateWeekDay == time.Monday || nextTradeDateWeekDay == time.Tuesday {
 				// 买入
@@ -73,7 +73,7 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 					opt = "sell"
 				}
 			}
-		} else if avg20 > close {
+		} else if avg5 > close {
 			// 熊市收盘
 			// 卖出
 			if s.lastCost != 0 {

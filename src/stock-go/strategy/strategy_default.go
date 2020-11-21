@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"math"
 	"stock-go/exportdata"
 	"stock-go/utils"
 	"strconv"
@@ -106,5 +107,36 @@ func (s *DefaultStrategy) Step() (bool, error) {
 }
 
 func (s *DefaultStrategy) Final() error {
+	if s.Result == nil || s.Result.LineData == nil || len(s.Result.LineData) <= 1 {
+		return nil
+	}
+	startTime := s.Result.LineData[0].Time
+	endTime := s.Result.LineData[len(s.Result.LineData)-1].Time
+	year := float64(endTime.Unix()-startTime.Unix()) / float64(86400*365)
+	if year <= 0 {
+		return utils.Errorf(nil, "数据错误 %+v %+v", startTime, endTime)
+	}
+	totalReturnRate := s.Result.LineData[len(s.Result.LineData)-1].Value
+	s.Result.AnualReturnRate = math.Pow(totalReturnRate, 1/year) - 1
+	var (
+		maxDrawDown  float64
+		maxValue     float64
+		maxDownValue float64
+	)
+	for i := 0; i < len(s.Result.LineData); i++ {
+		if s.Result.LineData[i].Value > maxValue {
+			maxValue = s.Result.LineData[i].Value
+			maxDownValue = s.Result.LineData[i].Value
+		} else {
+			if s.Result.LineData[i].Value < maxDownValue {
+				maxDownValue = s.Result.LineData[i].Value
+				rate := 1 - maxDownValue/maxValue
+				if rate > maxDrawDown {
+					maxDrawDown = rate
+				}
+			}
+		}
+	}
+	s.Result.DrawDown = maxDrawDown
 	return nil
 }
