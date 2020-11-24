@@ -9,6 +9,8 @@ import (
 
 var (
 	ErrFileNotExist = fmt.Errorf("No such file or directory")
+
+	ErrFileQueryTimeout = fmt.Errorf("File query timeout")
 )
 
 type CommonCSVFile struct {
@@ -32,7 +34,7 @@ func ReadCommonCSVFile(file string) (*CommonCSVFile, error) {
 		return nil, Errorf(nil, "no file lines %s", file)
 	}
 	if bytes.Contains(lines[0], []byte("error")) {
-		return nil, Errorf(nil, "file data error %s", file)
+		return nil, ErrFileQueryTimeout
 	}
 	columns := bytes.Split(lines[0], []byte(","))
 	if len(columns) <= 0 {

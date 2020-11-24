@@ -10,3 +10,10 @@ func TestStrategy(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAverage(t *testing.T) {
+	err := compareAverage()
+	if err != nil {
+		t.Fatal(err)
+	}
+}

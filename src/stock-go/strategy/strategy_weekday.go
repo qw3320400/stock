@@ -10,6 +10,7 @@ var _ Strategy = &WeekDayStrategy{}
 
 type WeekDayStrategy struct {
 	DefaultStrategy
+	DayCount      int
 	lastValue     float64
 	lastCost      float64
 	lastValueList []float64
@@ -39,13 +40,16 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 		return false, utils.Errorf(err, "trconv.ParseFloat fail")
 	}
 	s.lastValueList = append(s.lastValueList, close)
-	// 20日均值
+	// 均值
+	if s.DayCount <= 0 {
+		s.DayCount = 5
+	}
 	var avg20 float64
-	if s.stepIndex-19 >= 0 {
-		for i := s.stepIndex; i >= s.stepIndex-19; i-- {
+	if s.stepIndex-s.DayCount+1 >= 0 {
+		for i := s.stepIndex; i >= s.stepIndex-s.DayCount+1; i-- {
 			avg20 += s.lastValueList[i]
 		}
-		avg20 = avg20 / 20
+		avg20 = avg20 / float64(s.DayCount)
 	}
 	if s.stepIndex == 0 {
 		s.lastValue = 1
