@@ -4,21 +4,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"stock-go/utils"
-	"time"
 )
 
-type RunStrategyRequest struct {
-	Code      string `json:"code"`
-	StartDate string `json:"start_date"`
-	EndDate   string `json:"end_date"`
-	// internal
-	startTime time.Time `json:"-"`
-	endTime   time.Time `json:"-"`
-}
-
-func RunStrategy(request *RunStrategyRequest) error {
-
-	return nil
+func RunStrategy(request map[string]string) error {
+	if request == nil || request["tag"] == "" {
+		return utils.Errorf(nil, "param error %+v", request)
+	}
+	var strategy Strategy
+	switch request["tag"] {
+	case "weekday":
+		strategy = &WeekDayStrategy{}
+	case "average":
+		strategy = &AverageStrategy{}
+	case "default":
+		strategy = &DefaultStrategy{}
+	}
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return utils.Errorf(err, "json.Marshal fail")
+	}
+	err = json.Unmarshal(requestBody, strategy)
+	if err != nil {
+		return utils.Errorf(err, "json.Unmarshal fail")
+	}
+	return run(strategy)
 }
 
 func run(s Strategy) error {
@@ -60,7 +69,7 @@ func compareWeekDayAndDefault() error {
 	defaultData := ds.Result
 
 	wsAvg5 := &WeekDayStrategy{
-		DayCount: 5,
+		DayCountStr: "5",
 	}
 	err = run(wsAvg5)
 	if err != nil || wsAvg5.Result == nil {
@@ -69,7 +78,7 @@ func compareWeekDayAndDefault() error {
 	wsAvg5Data := wsAvg5.Result
 
 	wsAvg20 := &WeekDayStrategy{
-		DayCount: 20,
+		DayCountStr: "20",
 	}
 	err = run(wsAvg20)
 	if err != nil || wsAvg20.Result == nil {
@@ -111,7 +120,7 @@ func compareAverage() error {
 	chartData := [][]interface{}{}
 
 	as5 := &AverageStrategy{
-		DayCount: 5,
+		DayCountStr: "5",
 	}
 	err := run(as5)
 	if err != nil || as5.Result == nil {
@@ -120,7 +129,7 @@ func compareAverage() error {
 	as5Data := as5.Result
 
 	as10 := &AverageStrategy{
-		DayCount: 10,
+		DayCountStr: "10",
 	}
 	err = run(as10)
 	if err != nil || as10.Result == nil {
@@ -129,7 +138,7 @@ func compareAverage() error {
 	as10Data := as10.Result
 
 	as20 := &AverageStrategy{
-		DayCount: 20,
+		DayCountStr: "20",
 	}
 	err = run(as20)
 	if err != nil || as20.Result == nil {

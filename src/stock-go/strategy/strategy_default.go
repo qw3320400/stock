@@ -2,7 +2,9 @@ package strategy
 
 import (
 	"math"
-	"stock-go/exportdata"
+	"stock-go/collectdata"
+	"stock-go/common"
+	"stock-go/data/mysql/stock"
 	"stock-go/utils"
 	"strconv"
 	"time"
@@ -12,16 +14,17 @@ var _ Strategy = &DefaultStrategy{}
 
 type DefaultStrategy struct {
 	// input
-	StartTimeStr string
-	EndTimeStr   string
-	Code         string
+	Tag       string `json:"tag"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
+	Code      string `json:"code"`
 	// output
 	Result *StrategyResult
 	// internal
 	startTime         time.Time
 	endTime           time.Time
-	baostockLocalData *exportdata.LoadStockDataResponse
-	stepIndex         int
+	baostockLocalData *collectdata.LoadDataRespose
+	stepIndex         int64
 	baseCost          float64
 }
 
@@ -29,11 +32,11 @@ func (s *DefaultStrategy) Init() error {
 	if s == nil {
 		return utils.Errorf(nil, "s is nil")
 	}
-	if s.StartTimeStr == "" {
-		s.StartTimeStr = DefaultStartTimeStr
+	if s.StartDate == "" {
+		s.StartDate = DefaultStartTimeStr
 	}
-	if s.EndTimeStr == "" {
-		s.EndTimeStr = DefaultEndTimeStr
+	if s.EndDate == "" {
+		s.EndDate = DefaultEndTimeStr
 	}
 	if s.Code == "" {
 		s.Code = DefaultCode
@@ -41,11 +44,11 @@ func (s *DefaultStrategy) Init() error {
 	var (
 		err error
 	)
-	s.startTime, err = time.Parse("2006-01-02", s.StartTimeStr)
+	s.startTime, err = time.Parse("2006-01-02", s.StartDate)
 	if err != nil {
 		return utils.Errorf(err, "time.Parse fail")
 	}
-	s.endTime, err = time.Parse("2006-01-02", s.EndTimeStr)
+	s.endTime, err = time.Parse("2006-01-02", s.EndDate)
 	if err != nil {
 		return utils.Errorf(err, "time.Parse fail")
 	}
@@ -59,15 +62,13 @@ func (s *DefaultStrategy) LoadData() error {
 	var (
 		err error
 	)
-	s.baostockLocalData, err = exportdata.LoadBaostockLocalData(&exportdata.LoadStockDataRequest{
-		StartTime:  s.startTime,
-		EndTime:    s.endTime,
-		Code:       s.Code,
-		Frequency:  "d",
-		AdjustFlag: "3",
+	s.baostockLocalData, err = collectdata.LoadData(&collectdata.LoadDataRequest{
+		StartTime: s.startTime,
+		EndTime:   s.endTime,
+		Code:      s.Code,
 	})
 	if err != nil {
-		return utils.Errorf(err, "exportdata.LoadBaostockLocalData fail")
+		return utils.Errorf(err, "collectdata.LoadData fail")
 	}
 	return nil
 }
@@ -81,13 +82,13 @@ func (s *DefaultStrategy) Step() (bool, error) {
 			LineData: []*PointData{},
 		}
 	}
-	if len(s.baostockLocalData.StockDateList) < s.stepIndex+1 {
+	if int64(len(s.baostockLocalData.StockKDateList)) < s.stepIndex+1 {
 		return false, nil
 	}
 	point := &PointData{
-		Time: s.baostockLocalData.StockDateList[s.stepIndex].Time,
+		Time: s.baostockLocalData.StockKDateList[s.stepIndex].TimeCST,
 	}
-	closeStr := s.baostockLocalData.StockDateList[s.stepIndex].Map["close"]
+	closeStr := s.baostockLocalData.StockKDateList[s.stepIndex].Close
 	close, err := strconv.ParseFloat(closeStr, 64)
 	if err != nil {
 		return false, utils.Errorf(err, "trconv.ParseFloat fail")
@@ -138,5 +139,36 @@ func (s *DefaultStrategy) Final() error {
 		}
 	}
 	s.Result.DrawDown = maxDrawDown
+	// 保存数据
+	resultResp, err := stock.InsertStockStrategyResult(&stock.InsertStockStrategyResultRequest{
+		StockStrategyResult: &common.StockStrategyResult{
+			Code:            s.Code,
+			Tag:             s.Tag,
+			StartTimeCST:    s.startTime,
+			EndTimeCST:      s.endTime,
+			AnualReturnRate: strconv.FormatFloat(s.Result.AnualReturnRate, 'f', -1, 64),
+			DrawDown:        strconv.FormatFloat(s.Result.DrawDown, 'f', -1, 64),
+		},
+	})
+	if err != nil {
+		return utils.Errorf(err, "stock.InsertStockStrategyResult fail")
+	}
+	strategyDataRequest := &stock.InsertStockStrategyDataRequest{
+		StockStrategyDataList: []*common.StockStrategyData{},
+	}
+	for i := 0; i < len(s.Result.LineData); i++ {
+		strategyDataRequest.StockStrategyDataList = append(strategyDataRequest.StockStrategyDataList, &common.StockStrategyData{
+			StockStrategyResultID: resultResp.StockStrategyResult.ID,
+			Code:                  s.Code,
+			Tag:                   s.Tag,
+			TimeCST:               s.Result.LineData[i].Time,
+			Value:                 strconv.FormatFloat(s.Result.LineData[i].Value, 'f', -1, 64),
+		})
+	}
+	err = stock.InsertStockStrategyData(strategyDataRequest)
+	if err != nil {
+		return utils.Errorf(err, "stock.InsertStockStrategyData fail")
+	}
+
 	return nil
 }

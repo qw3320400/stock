@@ -40,3 +40,22 @@ type StockKData struct {
 	PbMRQ       string
 	IsST        bool
 }
+
+type StockStrategyData struct {
+	ID                    int64
+	StockStrategyResultID int64
+	Code                  string
+	Tag                   string
+	TimeCST               time.Time
+	Value                 string
+}
+
+type StockStrategyResult struct {
+	ID              int64
+	Code            string
+	Tag             string
+	StartTimeCST    time.Time
+	EndTimeCST      time.Time
+	AnualReturnRate string
+	DrawDown        string
+}

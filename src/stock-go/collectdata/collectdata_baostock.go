@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"stock-go/common"
-	"stock-go/data/mysql"
+	"stock-go/data/mysql/stock"
 	"stock-go/thirdparty/baostock"
 	"stock-go/utils"
 	"strings"
@@ -21,47 +21,31 @@ func CollectBaostockData(request *CollectDataRequest) error {
 	if request == nil || request.startTime.Unix() <= 0 || request.endTime.Unix() <= 0 {
 		return utils.Errorf(nil, "request param error %+v", request)
 	}
-	// 链接数据库
-	err := mysql.Connect()
-	if err != nil {
-		return utils.Errorf(err, "mysql.Connect fail")
-	}
-	defer mysql.Close()
-	// 连接
-	bc, err := baostock.NewBaostockConnection()
-	if err != nil {
-		return utils.Errorf(err, "baostock.NewBaostockConnection fail")
-	}
-	defer bc.CloseConnection()
-	// 登陆
-	err = bc.Login("", "", 0)
-	if err != nil {
-		return utils.Errorf(err, "bc.Login fail")
-	}
-	defer func() {
-		bc.Logout()
-	}()
 	// all stock code
-	err = loadAllStockCode(bc)
+	err := loadAllStockCode()
 	if err != nil {
 		return utils.Errorf(err, "loadAllStockCode fail")
 	}
 	// trade date
-	err = loadStockTradeDates(bc)
+	err = loadStockTradeDates()
 	if err != nil {
 		return utils.Errorf(err, "loadStockTradeDates fail")
 	}
 	// k data
-	err = loadStockKData(bc, request)
+	err = loadStockKData(request)
 	if err != nil {
 		return utils.Errorf(err, "loadStockKData fail")
 	}
 	return nil
 }
 
-func loadAllStockCode(bc *baostock.BaostockConnection) error {
+func loadAllStockCode() error {
 	tmpTime := time.Now().In(time.FixedZone("CST", 8*60*60))
 	for {
+		bc, err := baostock.GetBaostockConnection()
+		if err != nil {
+			return utils.Errorf(err, "baostock.GetBaostockConnection fail")
+		}
 		tmpDate := tmpTime.Format("2006-01-02")
 		allStockResponse, err := bc.QueryAllStock(tmpDate)
 		if err != nil || allStockResponse == nil || allStockResponse.Rows == nil {
@@ -76,7 +60,7 @@ func loadAllStockCode(bc *baostock.BaostockConnection) error {
 			if err != nil {
 				return utils.Errorf(err, "allStockCodeResponseToData fail")
 			}
-			exsitCode, err := mysql.GetAllStockCode()
+			exsitCode, err := stock.GetAllStockCode()
 			if err != nil {
 				return utils.Errorf(err, "mysql.GetAllStockCode fail")
 			}
@@ -92,11 +76,11 @@ func loadAllStockCode(bc *baostock.BaostockConnection) error {
 				insertCodeList = append(insertCodeList, code)
 			}
 			if len(insertCodeList) > 0 {
-				err = mysql.InsertStockCode(&mysql.InsertStockCodeRequest{
+				err = stock.InsertStockCode(&stock.InsertStockCodeRequest{
 					StockCodeList: insertCodeList,
 				})
 				if err != nil {
-					return utils.Errorf(err, "mysql.InsertStockCode fail")
+					return utils.Errorf(err, "stock.InsertStockCode fail")
 				}
 			}
 			break
@@ -129,9 +113,13 @@ func allStockCodeResponseToData(response *baostock.QueryAllStockResponse) ([]*co
 	return result, nil
 }
 
-func loadStockTradeDates(bc *baostock.BaostockConnection) error {
+func loadStockTradeDates() error {
 	tmpTime := time.Now().In(time.FixedZone("CST", 8*60*60))
 	for {
+		bc, err := baostock.GetBaostockConnection()
+		if err != nil {
+			return utils.Errorf(err, "baostock.GetBaostockConnection fail")
+		}
 		tmpDate := tmpTime.Format("2006-01-02")
 		tradeDatesResponse, err := bc.QueryTradeDates(EarliestDate, tmpDate)
 		if err != nil || tradeDatesResponse == nil || tradeDatesResponse.Rows == nil {
@@ -146,9 +134,9 @@ func loadStockTradeDates(bc *baostock.BaostockConnection) error {
 			if err != nil {
 				return utils.Errorf(err, "stockTradeDatesResponseToData fail")
 			}
-			exsitTradeDate, err := mysql.GetAllStockTradeDate()
+			exsitTradeDate, err := stock.GetAllStockTradeDate()
 			if err != nil {
-				return utils.Errorf(err, "mysql.GetAllStockCode fail")
+				return utils.Errorf(err, "stock.GetAllStockCode fail")
 			}
 			exsitTradeDateMap := map[string]bool{}
 			for _, tradeDate := range exsitTradeDate.StockTradeDateList {
@@ -162,11 +150,11 @@ func loadStockTradeDates(bc *baostock.BaostockConnection) error {
 				insertTradeDateList = append(insertTradeDateList, tradeDate)
 			}
 			if len(insertTradeDateList) > 0 {
-				err = mysql.InsertStockTradeDate(&mysql.InsertStockTradeDateRequest{
+				err = stock.InsertStockTradeDate(&stock.InsertStockTradeDateRequest{
 					StockTradeDateList: insertTradeDateList,
 				})
 				if err != nil {
-					return utils.Errorf(err, "mysql.InsertStockTradeDate fail")
+					return utils.Errorf(err, "stock.InsertStockTradeDate fail")
 				}
 			}
 			break
@@ -204,7 +192,7 @@ func stockTradeDatesResponseToData(response *baostock.QueryTradeDatesResponse) (
 	return result, nil
 }
 
-func loadStockKData(bc *baostock.BaostockConnection, request *CollectDataRequest) error {
+func loadStockKData(request *CollectDataRequest) error {
 	tmpTime := request.endTime
 	for {
 		// check if break
@@ -212,9 +200,9 @@ func loadStockKData(bc *baostock.BaostockConnection, request *CollectDataRequest
 			break
 		}
 		if request.isAllDataCode {
-			exsitCode, err := mysql.GetAllStockCode()
+			exsitCode, err := stock.GetAllStockCode()
 			if err != nil {
-				return utils.Errorf(err, "mysql.GetAllStockCode fail")
+				return utils.Errorf(err, "stock.GetAllStockCode fail")
 			}
 			request.dataCodeList = []string{}
 			for _, code := range exsitCode.StockCodeList {
@@ -223,7 +211,7 @@ func loadStockKData(bc *baostock.BaostockConnection, request *CollectDataRequest
 		}
 		// each code
 		for _, code := range request.dataCodeList {
-			err := loadStockKDataByMonthAndCode(bc, code, tmpTime)
+			err := loadStockKDataByMonthAndCode(code, tmpTime)
 			if err != nil {
 				return utils.Errorf(err, "loadStockKDataByMonthAndCode fail")
 			}
@@ -235,31 +223,31 @@ func loadStockKData(bc *baostock.BaostockConnection, request *CollectDataRequest
 }
 
 var (
-	frequencyList = [][]string{
-		{"d", "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,psTTM,pcfNcfTTM,pbMRQ,isST"},
-		{"w", "date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg"},
-		{"m", "date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg"},
-		{"5", "date,code,open,high,low,close,volume,amount,adjustflag"},
-		{"15", "date,code,open,high,low,close,volume,amount,adjustflag"},
-		{"30", "date,code,open,high,low,close,volume,amount,adjustflag"},
-		{"60", "date,code,open,high,low,close,volume,amount,adjustflag"},
+	frequencyMap = map[string]string{
+		"d":  "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,psTTM,pcfNcfTTM,pbMRQ,isST",
+		"w":  "date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg",
+		"m":  "date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg",
+		"5":  "date,code,open,high,low,close,volume,amount,adjustflag",
+		"15": "date,code,open,high,low,close,volume,amount,adjustflag",
+		"30": "date,code,open,high,low,close,volume,amount,adjustflag",
+		"60": "date,code,open,high,low,close,volume,amount,adjustflag",
 	}
 )
 
-func loadStockKDataByMonthAndCode(bc *baostock.BaostockConnection, code string, date time.Time) error {
+func loadStockKDataByMonthAndCode(code string, date time.Time) error {
 	startTime := time.Date(date.Year(), date.Month(), int(1), int(0), int(0), int(0), int(0), time.UTC)
 	endTime := time.Date(date.Year(), date.Month()+1, int(1), int(0), int(0), int(0), int(0), time.UTC).Add(time.Hour * -24)
-	for _, frequency := range frequencyList {
+	for frequency := range frequencyMap {
 		// 后复权
-		adjustFlag := "1"
-		err := loadStockKDataAndSave(bc, code, startTime, endTime, frequency, adjustFlag)
+		adjustFlag := "post"
+		err := loadStockKDataAndSave(code, startTime, endTime, frequency, adjustFlag)
 		if err != nil {
 			return utils.Errorf(err, "loadStockKDataAndSave fail")
 		}
 
 		// 不复权
-		adjustFlag = "3"
-		err = loadStockKDataAndSave(bc, code, startTime, endTime, frequency, adjustFlag)
+		adjustFlag = "no"
+		err = loadStockKDataAndSave(code, startTime, endTime, frequency, adjustFlag)
 		if err != nil {
 			return utils.Errorf(err, "loadStockKDataAndSave fail")
 		}
@@ -268,58 +256,51 @@ func loadStockKDataByMonthAndCode(bc *baostock.BaostockConnection, code string, 
 	return nil
 }
 
-func loadStockKDataAndSave(bc *baostock.BaostockConnection, code string, startTime, endTime time.Time, frequency []string, adjustFlag string) error {
-	adjustFlagToData, err := baostockAdjustFlagToData(adjustFlag)
+func loadStockKDataAndSave(code string, startTime, endTime time.Time, frequency string, adjustFlag string) error {
+	baostockAdjustFlag, err := dataAdjustFlagToBaostock(adjustFlag)
 	if err != nil {
-		return utils.Errorf(err, "baostockAdjustFlagToData %+v", adjustFlag)
+		return utils.Errorf(err, "dataAdjustFlagToBaostock %+v", adjustFlag)
 	}
-	existData, err := mysql.GetStockKDataCount(&mysql.GetStockKDataCountRequest{
-		Code:       code,
-		StartTime:  startTime,
-		EndTime:    startTime.AddDate(0, 1, 0),
-		Frequency:  frequency[0],
-		AdjustFlag: adjustFlagToData,
-	})
+
+	bc, err := baostock.GetBaostockConnection()
 	if err != nil {
-		return utils.Errorf(err, "mysql.GetStockKDataCount fail")
+		return utils.Errorf(err, "baostock.GetBaostockConnection fail")
 	}
-	if existData.Count <= 0 {
-		stockKDataResponse, err := bc.QueryHistoryKDataPlusWithTimeOut(code, frequency[1], startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), frequency[0], adjustFlag, 60)
-		if err != nil || stockKDataResponse == nil || stockKDataResponse.Rows == nil {
-			if err != baostock.QueryTimeoutErr {
-				return utils.Errorf(err, "bc.QueryHistoryKDataPlusWithTimeOut fail")
-			}
+	stockKDataResponse, err := bc.QueryHistoryKDataPlusWithTimeOut(code, frequencyMap[frequency], startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), frequency, baostockAdjustFlag, 60)
+	if err != nil || stockKDataResponse == nil || stockKDataResponse.Rows == nil {
+		if err != baostock.QueryTimeoutErr {
+			return utils.Errorf(err, "bc.QueryHistoryKDataPlusWithTimeOut fail")
 		}
-		if err == baostock.QueryTimeoutErr {
-			// 读取超时不中断
-			fileData := []byte("query data timeout error")
-			// 记录error的
-			err = os.MkdirAll(filepath.Join(DataPath, ErrorPath), os.ModePerm)
+	}
+	if err == baostock.QueryTimeoutErr {
+		// 读取超时不中断
+		fileData := []byte("query data timeout error")
+		// 记录error的
+		err = os.MkdirAll(filepath.Join(DataPath, ErrorPath), os.ModePerm)
+		if err != nil {
+			return utils.Errorf(err, "os.MkdirAll fail")
+		}
+		stockFileName := fmt.Sprintf(StockFileName, code, startTime.Format("2006-01"), frequency, baostockAdjustFlag)
+		err = ioutil.WriteFile(filepath.Join(DataPath, ErrorPath, stockFileName), fileData, os.ModePerm)
+		if err != nil {
+			return utils.Errorf(err, "ioutil.WriteFile fail")
+		}
+		// 连接已经bock 需要重连
+		bc, err = baostock.ReconnectBaostock()
+		if err != nil {
+			return utils.Errorf(err, "baostock.ReconnectBaostock fail")
+		}
+	} else {
+		dataList, err := stockKDataResponseToData(stockKDataResponse, frequency)
+		if err != nil {
+			return utils.Errorf(err, "stockKDataResponseToData fail")
+		}
+		if len(dataList) > 0 {
+			err = stock.InsertStockKData(&stock.InsertStockKDataRequest{
+				StockKDataList: dataList,
+			})
 			if err != nil {
-				return utils.Errorf(err, "os.MkdirAll fail")
-			}
-			stockFileName := fmt.Sprintf(StockFileName, code, startTime.Format("2006-01"), frequency[0], adjustFlag)
-			err = ioutil.WriteFile(filepath.Join(DataPath, ErrorPath, stockFileName), fileData, os.ModePerm)
-			if err != nil {
-				return utils.Errorf(err, "ioutil.WriteFile fail")
-			}
-			// 连接已经bock 需要重连
-			err = bc.ReConnect()
-			if err != nil {
-				return utils.Errorf(err, "bc.ReConnect fail")
-			}
-		} else {
-			dataList, err := stockKDataResponseToData(stockKDataResponse, frequency[0])
-			if err != nil {
-				return utils.Errorf(err, "stockKDataResponseToData fail")
-			}
-			if len(dataList) > 0 {
-				err = mysql.InsertStockKData(&mysql.InsertStockKDataRequest{
-					StockKDataList: dataList,
-				})
-				if err != nil {
-					return utils.Errorf(err, "mysql.InsertStockKData fail")
-				}
+				return utils.Errorf(err, "stock.InsertStockKData fail")
 			}
 		}
 	}
@@ -432,6 +413,19 @@ func baostockAdjustFlagToData(adjustFlag string) (string, error) {
 		return "pre", nil
 	case "3":
 		return "no", nil
+	default:
+		return "", utils.Errorf(nil, "返回数据错误 %+v", adjustFlag)
+	}
+}
+
+func dataAdjustFlagToBaostock(adjustFlag string) (string, error) {
+	switch adjustFlag {
+	case "post":
+		return "1", nil
+	case "pre":
+		return "2", nil
+	case "no":
+		return "3", nil
 	default:
 		return "", utils.Errorf(nil, "返回数据错误 %+v", adjustFlag)
 	}

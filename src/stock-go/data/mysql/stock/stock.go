@@ -1,8 +1,9 @@
-package mysql
+package stock
 
 import (
 	"fmt"
 	"stock-go/common"
+	"stock-go/data/mysql"
 	"stock-go/utils"
 	"time"
 )
@@ -12,8 +13,9 @@ type GetAllStockCodeResponse struct {
 }
 
 func GetAllStockCode() (*GetAllStockCodeResponse, error) {
-	if db == nil {
-		return nil, utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	str := `
 select
@@ -55,8 +57,9 @@ type InsertStockCodeRequest struct {
 }
 
 func InsertStockCode(request *InsertStockCodeRequest) error {
-	if db == nil {
-		return utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || len(request.StockCodeList) <= 0 {
 		return utils.Errorf(nil, "param error %+v", request)
@@ -77,7 +80,7 @@ values
 		paramList = append(paramList, code.Code, code.Name, code.Industry, code.IndustryClassification)
 	}
 	str += `on duplicate key update update_time_utc = CURRENT_TIMESTAMP`
-	_, err := db.Exec(str, paramList...)
+	_, err = db.Exec(str, paramList...)
 	if err != nil {
 		return utils.Errorf(err, "db.Exec fail")
 	}
@@ -89,8 +92,9 @@ type GetStockTradeDateResponse struct {
 }
 
 func GetAllStockTradeDate() (*GetStockTradeDateResponse, error) {
-	if db == nil {
-		return nil, utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	str := `
 select
@@ -138,8 +142,9 @@ type InsertStockTradeDateRequest struct {
 }
 
 func InsertStockTradeDate(request *InsertStockTradeDateRequest) error {
-	if db == nil {
-		return utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || len(request.StockTradeDateList) <= 0 {
 		return utils.Errorf(nil, "param error %+v", request)
@@ -166,7 +171,7 @@ values
 		paramList = append(paramList, tradeDate.DateCST.Format("2006-01-02 15:04:05"), isTradingDayStr)
 	}
 	str += `on duplicate key update update_time_utc = CURRENT_TIMESTAMP`
-	_, err := db.Exec(str, paramList...)
+	_, err = db.Exec(str, paramList...)
 	if err != nil {
 		return utils.Errorf(err, "db.Exec fail")
 	}
@@ -186,8 +191,9 @@ type GetStockKDataCountResponse struct {
 }
 
 func GetStockKDataCount(request *GetStockKDataCountRequest) (*GetStockKDataCountResponse, error) {
-	if db == nil {
-		return nil, utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || request.Code == "" || request.StartTime.Unix() <= 0 || request.EndTime.Unix() <= 0 || request.Frequency == "" || request.AdjustFlag == "" {
 		return nil, utils.Errorf(nil, "param error %+v", request)
@@ -204,8 +210,9 @@ func GetStockKDataCount(request *GetStockKDataCountRequest) (*GetStockKDataCount
 }
 
 func GetStockKDataCountYear(request *GetStockKDataCountRequest, year int64) (*GetStockKDataCountResponse, error) {
-	if db == nil {
-		return nil, utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || request.Code == "" || request.StartTime.Unix() <= 0 || request.EndTime.Unix() <= 0 || request.Frequency == "" || request.AdjustFlag == "" {
 		return nil, utils.Errorf(nil, "param error %+v", request)
@@ -219,7 +226,7 @@ where
 	code = ? and time_cst >= ? and time_cst < ? and frequency = ? and adjust_flag = ?
 	`, year)
 	response := &GetStockKDataCountResponse{}
-	err := db.QueryRow(str,
+	err = db.QueryRow(str,
 		request.Code,
 		request.StartTime.Format("2006-01-02 15:04:05"),
 		request.EndTime.Format("2006-01-02 15:04:05"),
@@ -245,8 +252,9 @@ type GetStockKDataResponse struct {
 }
 
 func GetStockKData(request *GetStockKDataRequest) (*GetStockKDataResponse, error) {
-	if db == nil {
-		return nil, utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || request.Code == "" || request.StartTime.Unix() <= 0 || request.EndTime.Unix() <= 0 || request.Frequency == "" || request.AdjustFlag == "" {
 		return nil, utils.Errorf(nil, "param error %+v", request)
@@ -265,8 +273,9 @@ func GetStockKData(request *GetStockKDataRequest) (*GetStockKDataResponse, error
 }
 
 func GetStockKDataYear(request *GetStockKDataRequest, year int64) (*GetStockKDataResponse, error) {
-	if db == nil {
-		return nil, utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || request.Code == "" || request.StartTime.Unix() <= 0 || request.EndTime.Unix() <= 0 || request.Frequency == "" || request.AdjustFlag == "" {
 		return nil, utils.Errorf(nil, "param error %+v", request)
@@ -357,8 +366,9 @@ type InsertStockKDataRequest struct {
 }
 
 func InsertStockKData(request *InsertStockKDataRequest) error {
-	if db == nil {
-		return utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || len(request.StockKDataList) <= 0 {
 		return utils.Errorf(nil, "param error %+v", request)
@@ -382,8 +392,9 @@ func InsertStockKData(request *InsertStockKDataRequest) error {
 }
 
 func InsertStockKDataYear(request *InsertStockKDataRequest, year int64) error {
-	if db == nil {
-		return utils.Errorf(nil, "db is nil")
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return utils.Errorf(err, "mysql.GetConnection fail")
 	}
 	if request == nil || len(request.StockKDataList) <= 0 {
 		return utils.Errorf(nil, "param error %+v", request)
@@ -450,9 +461,107 @@ values
 		)
 	}
 	str += `on duplicate key update update_time_utc = CURRENT_TIMESTAMP`
-	_, err := db.Exec(str, paramList...)
+	_, err = db.Exec(str, paramList...)
 	if err != nil {
 		return utils.Errorf(err, "db.Exec fail")
 	}
 	return nil
+}
+
+type InsertStockStrategyDataRequest struct {
+	StockStrategyDataList []*common.StockStrategyData
+}
+
+func InsertStockStrategyData(request *InsertStockStrategyDataRequest) error {
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return utils.Errorf(err, "mysql.GetConnection fail")
+	}
+	if request == nil || len(request.StockStrategyDataList) <= 0 {
+		return utils.Errorf(nil, "param error %+v", request)
+	}
+	str := `
+insert into
+	stock_stategy_result_data
+(
+	stock_stategy_result_id,
+	code,
+	tag,
+	time_cst,
+	value
+)
+values
+	`
+	paramList := []interface{}{}
+	for idx, data := range request.StockStrategyDataList {
+		if idx == len(request.StockStrategyDataList)-1 {
+			str += "(?,?,?,?,?)"
+		} else {
+			str += "(?,?,?,?,?),"
+		}
+		paramList = append(paramList,
+			data.StockStrategyResultID,
+			data.Code,
+			data.Tag,
+			data.TimeCST.Format("2006-01-02 15:04:05"),
+			data.Value,
+		)
+	}
+	_, err = db.Exec(str, paramList...)
+	if err != nil {
+		return utils.Errorf(err, "db.Exec fail")
+	}
+	return nil
+}
+
+type InsertStockStrategyResultRequest struct {
+	StockStrategyResult *common.StockStrategyResult
+}
+
+type InsertStockStrategyResultResponse struct {
+	StockStrategyResult *common.StockStrategyResult
+}
+
+func InsertStockStrategyResult(request *InsertStockStrategyResultRequest) (*InsertStockStrategyResultResponse, error) {
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
+	}
+	if request == nil || request.StockStrategyResult == nil {
+		return nil, utils.Errorf(nil, "param error %+v", request)
+	}
+	str := `
+insert into
+	stock_stategy_result
+(
+	code,
+	tag,
+	start_time_cst,
+	end_time_cst,
+	anual_return_rate,
+	draw_down
+)
+values
+	(?,?,?,?,?,?)
+	`
+	paramList := []interface{}{}
+	paramList = append(paramList,
+		request.StockStrategyResult.Code,
+		request.StockStrategyResult.Tag,
+		request.StockStrategyResult.StartTimeCST.Format("2006-01-02 15:04:05"),
+		request.StockStrategyResult.EndTimeCST.Format("2006-01-02 15:04:05"),
+		request.StockStrategyResult.AnualReturnRate,
+		request.StockStrategyResult.DrawDown,
+	)
+	result, err := db.Exec(str, paramList...)
+	if err != nil {
+		return nil, utils.Errorf(err, "db.Exec fail")
+	}
+	request.StockStrategyResult.ID, err = result.LastInsertId()
+	if err != nil {
+		return nil, utils.Errorf(err, "result.LastInsertId fail")
+	}
+	return &InsertStockStrategyResultResponse{
+		StockStrategyResult: request.StockStrategyResult,
+	}, nil
 }

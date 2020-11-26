@@ -10,10 +10,25 @@ var _ Strategy = &WeekDayStrategy{}
 
 type WeekDayStrategy struct {
 	DefaultStrategy
-	DayCount      int
+	DayCountStr string `json:"day_count"`
+	// internal
+	dayCount      int64
 	lastValue     float64
 	lastCost      float64
 	lastValueList []float64
+}
+
+func (s *WeekDayStrategy) Init() error {
+	var err error
+	s.dayCount, err = strconv.ParseInt(s.DayCountStr, 10, 64)
+	if err != nil {
+		return utils.Errorf(err, "strconv.ParseInt fail")
+	}
+	if s.dayCount <= 0 || s.dayCount > 100 {
+		return utils.Errorf(nil, "param error %+v", s)
+	}
+	s.Tag += ("_" + s.DayCountStr)
+	return s.DefaultStrategy.Init()
 }
 
 func (s *WeekDayStrategy) Step() (bool, error) {
@@ -28,28 +43,25 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 	if s.lastValueList == nil {
 		s.lastValueList = []float64{}
 	}
-	if len(s.baostockLocalData.StockDateList) < s.stepIndex+1 {
+	if int64(len(s.baostockLocalData.StockKDateList)) < s.stepIndex+1 {
 		return false, nil
 	}
 	point := &PointData{
-		Time: s.baostockLocalData.StockDateList[s.stepIndex].Time,
+		Time: s.baostockLocalData.StockKDateList[s.stepIndex].TimeCST,
 	}
-	closeStr := s.baostockLocalData.StockDateList[s.stepIndex].Map["close"]
+	closeStr := s.baostockLocalData.StockKDateList[s.stepIndex].Close
 	close, err := strconv.ParseFloat(closeStr, 64)
 	if err != nil {
-		return false, utils.Errorf(err, "trconv.ParseFloat fail")
+		return false, utils.Errorf(err, "strconv.ParseFloat fail")
 	}
 	s.lastValueList = append(s.lastValueList, close)
 	// 均值
-	if s.DayCount <= 0 {
-		s.DayCount = 5
-	}
-	var avg20 float64
-	if s.stepIndex-s.DayCount+1 >= 0 {
-		for i := s.stepIndex; i >= s.stepIndex-s.DayCount+1; i-- {
-			avg20 += s.lastValueList[i]
+	var avg float64
+	if s.stepIndex-s.dayCount+1 >= 0 {
+		for i := s.stepIndex; i >= s.stepIndex-s.dayCount+1; i-- {
+			avg += s.lastValueList[i]
 		}
-		avg20 = avg20 / float64(s.DayCount)
+		avg = avg / float64(s.dayCount)
 	}
 	if s.stepIndex == 0 {
 		s.lastValue = 1
@@ -62,9 +74,9 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 	point.Value = s.lastValue
 	// 策略
 	var opt string = "-"
-	if avg20 > 0 && len(s.baostockLocalData.StockDateList) > s.stepIndex+1 {
-		nextTradeDateWeekDay := s.baostockLocalData.StockDateList[s.stepIndex+1].Time.Weekday()
-		if avg20 < close {
+	if avg > 0 && int64(len(s.baostockLocalData.StockKDateList)) > s.stepIndex+1 {
+		nextTradeDateWeekDay := s.baostockLocalData.StockKDateList[s.stepIndex+1].TimeCST.Weekday()
+		if avg < close {
 			// 牛市收盘
 			if nextTradeDateWeekDay == time.Friday || nextTradeDateWeekDay == time.Monday || nextTradeDateWeekDay == time.Tuesday {
 				// 买入
@@ -77,7 +89,7 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 					opt = "sell"
 				}
 			}
-		} else if avg20 > close {
+		} else if avg > close {
 			// 熊市收盘
 			// 卖出
 			if s.lastCost != 0 {

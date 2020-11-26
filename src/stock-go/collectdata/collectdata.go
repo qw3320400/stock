@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"stock-go/data/mysql"
+	"stock-go/data/mysql/stock"
 	"stock-go/thirdparty/baostock"
 	"stock-go/utils"
 	"strings"
@@ -65,13 +65,6 @@ func CollectData(request *CollectDataRequest) error {
 }
 
 func FileToMysql() error {
-	// 链接数据库
-	err := mysql.Connect()
-	if err != nil {
-		return utils.Errorf(err, "mysql.Connect fail")
-	}
-	defer mysql.Close()
-
 	root := "/Users/k/Desktop/code/stock/data/baostock/stock"
 	yearList, err := ioutil.ReadDir(root)
 	if err != nil {
@@ -142,7 +135,7 @@ func FileToMysql() error {
 					panic(err)
 				}
 				if len(dataList) > 0 {
-					err = mysql.InsertStockKData(&mysql.InsertStockKDataRequest{
+					err = stock.InsertStockKData(&stock.InsertStockKDataRequest{
 						StockKDataList: dataList,
 					})
 					if err != nil {

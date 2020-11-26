@@ -15,21 +15,85 @@ import (
 	"time"
 )
 
+var (
+	baostockConnection *BaostockConnection
+)
+
 type BaostockConnection struct {
 	connection net.Conn
 	user       string
 }
 
-func NewBaostockConnection() (*BaostockConnection, error) {
+func GetBaostockConnection() (*BaostockConnection, error) {
+	if baostockConnection != nil {
+		return baostockConnection, nil
+	}
+	tmpConnection, err := newBaostockConnection()
+	if err != nil {
+		return nil, utils.Errorf(err, "NewBaostockConnection fail")
+	}
+	err = tmpConnection.login("", "", 0)
+	if err != nil {
+		return nil, utils.Errorf(err, "tmpConnection.login fail")
+	}
+	baostockConnection = tmpConnection
+	return baostockConnection, nil
+}
+
+func CloseBaostockConnection() error {
+	if baostockConnection == nil {
+		return nil
+	}
+	tmpConnection := baostockConnection
+	baostockConnection = nil
+	err := tmpConnection.logout()
+	if err != nil {
+		utils.LogErr(fmt.Sprintf("bc.logout fail %s", err))
+	}
+	err = tmpConnection.closeConnection()
+	if err != nil {
+		utils.LogErr(fmt.Sprintf("bc.CloseConnection fail %s", err))
+	}
+	return nil
+}
+
+func CloseBaostockConnectionWithoutLogout() error {
+	if baostockConnection == nil {
+		return nil
+	}
+	tmpConnection := baostockConnection
+	baostockConnection = nil
+	err := tmpConnection.closeConnection()
+	if err != nil {
+		utils.LogErr(fmt.Sprintf("bc.CloseConnection fail %s", err))
+	}
+	return nil
+}
+
+func ReconnectBaostock() (*BaostockConnection, error) {
+	utils.Log("reconnectiong to baostock ...")
+	err := CloseBaostockConnectionWithoutLogout()
+	if err != nil {
+		return nil, utils.Errorf(err, "CloseBaostockConnectionWithoutLogout fail")
+	}
+	bc, err := GetBaostockConnection()
+	if err != nil {
+		return nil, utils.Errorf(err, "GetBaostockConnection fail")
+	}
+	utils.Log("reconnected to baostock")
+	return bc, nil
+}
+
+func newBaostockConnection() (*BaostockConnection, error) {
 	bc := &BaostockConnection{}
-	err := bc.Connect()
+	err := bc.connect()
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Connect fail")
 	}
 	return bc, nil
 }
 
-func (bc *BaostockConnection) Connect() error {
+func (bc *BaostockConnection) connect() error {
 	if bc == nil {
 		return utils.Errorf(nil, "bc is nil")
 	}
@@ -46,7 +110,7 @@ func (bc *BaostockConnection) Connect() error {
 	return nil
 }
 
-func (bc *BaostockConnection) CloseConnection() error {
+func (bc *BaostockConnection) closeConnection() error {
 	if bc == nil || bc.connection == nil {
 		return utils.Errorf(nil, "bc is nil or connection is nil")
 	}
@@ -60,24 +124,7 @@ func (bc *BaostockConnection) CloseConnection() error {
 	return nil
 }
 
-func (bc *BaostockConnection) ReConnect() error {
-	if bc == nil || bc.connection == nil {
-		return utils.Errorf(nil, "bc is nil or connection is nil")
-	}
-	utils.Log("reconnectiong to baostock ...")
-	err := bc.CloseConnection()
-	if err != nil {
-		return utils.Errorf(err, "bc.CloseConnection fail")
-	}
-	err = bc.Connect()
-	if err != nil {
-		return utils.Errorf(err, "bc.Connect fail")
-	}
-	utils.Log("reconnected to baostock")
-	return nil
-}
-
-func (bc *BaostockConnection) Login(user, password string, options int64) error {
+func (bc *BaostockConnection) login(user, password string, options int64) error {
 	if bc == nil || bc.connection == nil {
 		return utils.Errorf(nil, "bc is nil or connection is nil")
 	}
@@ -96,15 +143,15 @@ func (bc *BaostockConnection) Login(user, password string, options int64) error 
 	utils.Log("login to baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
-	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	_, err := bc.write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
 	if err != nil {
 		return utils.Errorf(err, "bc.Write fail")
 	}
-	recieveBody, err := bc.Read()
+	recieveBody, err := bc.read()
 	if err != nil {
 		return utils.Errorf(err, "bc.Read fail")
 	}
-	recieveData, err := bc.DecodeRecieve(recieveBody)
+	recieveData, err := bc.decodeRecieve(recieveBody)
 	if err != nil {
 		return utils.Errorf(err, "bc.DecodeRecieve fail")
 	}
@@ -120,7 +167,7 @@ func (bc *BaostockConnection) Login(user, password string, options int64) error 
 	return nil
 }
 
-func (bc *BaostockConnection) Logout() error {
+func (bc *BaostockConnection) logout() error {
 	if bc == nil || bc.connection == nil {
 		return utils.Errorf(nil, "bc is nil or connection is nil")
 	}
@@ -135,15 +182,15 @@ func (bc *BaostockConnection) Logout() error {
 	utils.Log("logout from baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
-	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	_, err := bc.write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
 	if err != nil {
 		return utils.Errorf(err, "bc.Write fail")
 	}
-	recieveBody, err := bc.Read()
+	recieveBody, err := bc.read()
 	if err != nil {
 		return utils.Errorf(err, "bc.Read fail")
 	}
-	recieveData, err := bc.DecodeRecieve(recieveBody)
+	recieveData, err := bc.decodeRecieve(recieveBody)
 	if err != nil {
 		return utils.Errorf(err, "bc.DecodeRecieve fail")
 	}
@@ -236,15 +283,15 @@ func (bc *BaostockConnection) QueryHistoryKDataPage(code, fields, startDate, end
 	utils.Log("query history k data from baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
-	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	_, err := bc.write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Write fail")
 	}
-	recieveBody, err := bc.Read()
+	recieveBody, err := bc.read()
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Read fail")
 	}
-	recieveData, err := bc.DecodeRecieve(recieveBody)
+	recieveData, err := bc.decodeRecieve(recieveBody)
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.DecodeRecieve fail")
 	}
@@ -290,15 +337,15 @@ func (bc *BaostockConnection) QueryTradeDates(startDate, endDate string) (*Query
 	utils.Log("query trade dates from baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
-	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	_, err := bc.write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Write fail")
 	}
-	recieveBody, err := bc.Read()
+	recieveBody, err := bc.read()
 	if err != nil {
 		return nil, utils.Errorf(err, " bc.Read fail")
 	}
-	recieveData, err := bc.DecodeRecieve(recieveBody)
+	recieveData, err := bc.decodeRecieve(recieveBody)
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.DecodeRecieve fail")
 	}
@@ -336,15 +383,15 @@ func (bc *BaostockConnection) QueryAllStock(date string) (*QueryAllStockResponse
 	utils.Log("query all stock from baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
-	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	_, err := bc.write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Write fail")
 	}
-	recieveBody, err := bc.Read()
+	recieveBody, err := bc.read()
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Read fail")
 	}
-	recieveData, err := bc.DecodeRecieve(recieveBody)
+	recieveData, err := bc.decodeRecieve(recieveBody)
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.DecodeRecieve fail")
 	}
@@ -384,15 +431,15 @@ func (bc *BaostockConnection) QueryStockIndustry(code, date string) (*QueryStock
 	utils.Log("[QueryStockIndustry] query stock industry from baostock param " + msgBody + " " + msgHeader)
 	headBody := msgHeader + msgBody
 	crcSum := crc32.ChecksumIEEE([]byte(headBody))
-	_, err := bc.Write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
+	_, err := bc.write([]byte(headBody + MESSAGE_SPLIT + strconv.FormatInt(int64(crcSum), 10)))
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Write fail")
 	}
-	recieveBody, err := bc.Read()
+	recieveBody, err := bc.read()
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.Read fail")
 	}
-	recieveData, err := bc.DecodeRecieve(recieveBody)
+	recieveData, err := bc.decodeRecieve(recieveBody)
 	if err != nil {
 		return nil, utils.Errorf(err, "bc.DecodeRecieve fail")
 	}
@@ -407,7 +454,7 @@ func (bc *BaostockConnection) QueryStockIndustry(code, date string) (*QueryStock
 	return response, nil
 }
 
-func (bc *BaostockConnection) Write(data []byte) (int64, error) {
+func (bc *BaostockConnection) write(data []byte) (int64, error) {
 	if bc == nil || bc.connection == nil {
 		return 0, utils.Errorf(nil, "bc is nil or connection is nil")
 	}
@@ -419,7 +466,7 @@ func (bc *BaostockConnection) Write(data []byte) (int64, error) {
 	return int64(n), err
 }
 
-func (bc *BaostockConnection) Read() ([]byte, error) {
+func (bc *BaostockConnection) read() ([]byte, error) {
 	if bc == nil || bc.connection == nil {
 		return nil, utils.Errorf(nil, "bc is nil or connection is nil")
 	}
@@ -439,7 +486,7 @@ func (bc *BaostockConnection) Read() ([]byte, error) {
 	return data, nil
 }
 
-func (bc *BaostockConnection) DecodeRecieve(data []byte) (*RecieveData, error) {
+func (bc *BaostockConnection) decodeRecieve(data []byte) (*RecieveData, error) {
 	if bc == nil || bc.connection == nil {
 		return nil, utils.Errorf(nil, "bc is nil or connection is nil")
 	}

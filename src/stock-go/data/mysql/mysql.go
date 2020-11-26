@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"fmt"
 	"stock-go/utils"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -15,23 +16,27 @@ var (
 	db *sql.DB
 )
 
-func Connect() error {
-	var (
-		err error
-	)
-	db, err = sql.Open("mysql", connectionString)
-	if err != nil {
-		return utils.Errorf(err, "sql.Open fail", err)
+func GetConnection() (*sql.DB, error) {
+	if db != nil {
+		return db, nil
 	}
-	return nil
+	tmpDB, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		return nil, utils.Errorf(err, "sql.Open fail", err)
+	}
+	db = tmpDB
+	return db, nil
 }
 
-func Close() error {
-	if db != nil {
-		err := db.Close()
-		if err != nil {
-			return utils.Errorf(err, "db.Close fail", err)
-		}
+func CloseConnection() error {
+	if db == nil {
+		return nil
+	}
+	tmpDB := db
+	db = nil
+	err := tmpDB.Close()
+	if err != nil {
+		utils.LogErr(fmt.Sprintf("db.Close fail %s", err))
 	}
 	return nil
 }

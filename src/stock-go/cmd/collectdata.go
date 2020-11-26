@@ -9,6 +9,7 @@ import (
 
 func init() {
 	setCommand("collectdata", &CMDCollectData{})
+	setCommand("filetomysql", &CMDFileToMysql{})
 }
 
 type CMDCollectData struct {
@@ -25,4 +26,12 @@ func (*CMDCollectData) Run(param map[string]string) error {
 		return utils.Errorf(err, "json.Unmarshal fail")
 	}
 	return collectdata.CollectData(request)
+}
+
+type CMDFileToMysql struct {
+}
+
+func (*CMDFileToMysql) Run(param map[string]string) error {
+
+	return collectdata.FileToMysql()
 }
