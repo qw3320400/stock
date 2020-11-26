@@ -57,7 +57,7 @@ CREATE TABLE `stock_trade_date` (
   KEY `idx_stock_trade_date_02` (`is_trading_day`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='股票交易日';
 
-CREATE TABLE `stock_stategy_result` (
+CREATE TABLE `stock_strategy_result` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `create_time_utc` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time_utc` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
@@ -68,26 +68,26 @@ CREATE TABLE `stock_stategy_result` (
   `anual_return_rate` varchar(64) NOT NULL COMMENT '年化收益率',
   `draw_down` varchar(64) NOT NULL COMMENT '最大回撤',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uidx_stock_stategy_result_01` (`code`,`tag`,`start_time_cst`,`end_time_cst`),
-  KEY `idx_stock_stategy_result_02` (`code`),
-  KEY `idx_stock_stategy_result_03` (`tag`),
-  KEY `idx_stock_stategy_result_04` (`start_time_cst`),
-  KEY `idx_stock_stategy_result_05` (`end_time_cst`)
+  UNIQUE KEY `uidx_stock_strategy_result_01` (`code`,`tag`,`start_time_cst`,`end_time_cst`),
+  KEY `idx_stock_strategy_result_02` (`code`),
+  KEY `idx_stock_strategy_result_03` (`tag`),
+  KEY `idx_stock_strategy_result_04` (`start_time_cst`),
+  KEY `idx_stock_strategy_result_05` (`end_time_cst`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='策略主要指标';
 
-CREATE TABLE `stock_stategy_result_data` (
+CREATE TABLE `stock_strategy_result_data` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `create_time_utc` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time_utc` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-  `stock_stategy_result_id` bigint(20) NOT NULL COMMENT '策略结果id',
+  `stock_strategy_result_id` bigint(20) NOT NULL COMMENT '策略结果id',
   `code` varchar(64) NOT NULL COMMENT '股票代码',
   `tag` varchar(64) NOT NULL COMMENT '策略标记',
   `time_cst` datetime NOT NULL COMMENT '时间',
   `value` varchar(64) NOT NULL COMMENT '值',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uidx_stock_stategy_data_01` (`stock_stategy_result_id`,`time_cst`),
-  KEY `idx_stock_stategy_data_02` (`stock_stategy_result_id`),
-  KEY `idx_stock_stategy_data_03` (`code`),
-  KEY `idx_stock_stategy_data_04` (`tag`),
-  KEY `idx_stock_stategy_data_05` (`time_cst`)
+  UNIQUE KEY `uidx_stock_strategy_data_01` (`stock_strategy_result_id`,`time_cst`),
+  KEY `idx_stock_strategy_data_02` (`stock_strategy_result_id`),
+  KEY `idx_stock_strategy_data_03` (`code`),
+  KEY `idx_stock_strategy_data_04` (`tag`),
+  KEY `idx_stock_strategy_data_05` (`time_cst`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='策略数据';

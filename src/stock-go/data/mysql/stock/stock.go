@@ -482,9 +482,9 @@ func InsertStockStrategyData(request *InsertStockStrategyDataRequest) error {
 	}
 	str := `
 insert into
-	stock_stategy_result_data
+	stock_strategy_result_data
 (
-	stock_stategy_result_id,
+	stock_strategy_result_id,
 	code,
 	tag,
 	time_cst,
@@ -532,7 +532,7 @@ func InsertStockStrategyResult(request *InsertStockStrategyResultRequest) (*Inse
 	}
 	str := `
 insert into
-	stock_stategy_result
+	stock_strategy_result
 (
 	code,
 	tag,
