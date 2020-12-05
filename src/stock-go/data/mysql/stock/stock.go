@@ -565,3 +565,65 @@ values
 		StockStrategyResult: request.StockStrategyResult,
 	}, nil
 }
+
+type GetStockStrategyResultDataRequest struct {
+	StrategyResultID int64
+}
+
+type GetStockStrategyResultDataResponse struct {
+	StockStrategyDataList []*common.StockStrategyData
+}
+
+func GetStockStrategyResultData(request *GetStockStrategyResultDataRequest) (*GetStockStrategyResultDataResponse, error) {
+	db, err := mysql.GetConnection()
+	if err != nil || db == nil {
+		return nil, utils.Errorf(err, "mysql.GetConnection fail")
+	}
+	if request == nil || request.StrategyResultID <= 0 {
+		return nil, utils.Errorf(nil, "param error %+v", request)
+	}
+	str := `
+select
+	ifnull(id,''),
+	ifnull(stock_strategy_result_id,0),
+	ifnull(code,''),
+	ifnull(tag,''),
+	ifnull(time_cst,''),
+	ifnull(value,'')
+from
+	stock_strategy_result_data
+where
+	stock_strategy_result_id = ?
+order by
+	time_cst
+	`
+	rows, err := db.Query(str, request.StrategyResultID)
+	if err != nil {
+		return nil, utils.Errorf(err, "db.Query fail")
+	}
+	defer rows.Close()
+	response := &GetStockStrategyResultDataResponse{
+		StockStrategyDataList: []*common.StockStrategyData{},
+	}
+	for rows.Next() {
+		tmp := &common.StockStrategyData{}
+		var timeStr string
+		err = rows.Scan(
+			&tmp.ID,
+			&tmp.StockStrategyResultID,
+			&tmp.Code,
+			&tmp.Tag,
+			&timeStr,
+			&tmp.Value,
+		)
+		if err != nil {
+			return nil, utils.Errorf(err, "rows.Scan fail")
+		}
+		tmp.TimeCST, err = time.Parse("2006-01-02 15:04:05", timeStr)
+		if err != nil {
+			return nil, utils.Errorf(err, "time.Parse fail")
+		}
+		response.StockStrategyDataList = append(response.StockStrategyDataList, tmp)
+	}
+	return response, nil
+}

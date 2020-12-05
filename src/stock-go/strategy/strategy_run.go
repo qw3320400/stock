@@ -13,6 +13,8 @@ func RunStrategy(request map[string]string) error {
 	switch request["tag"] {
 	case "weekday":
 		strategy = &WeekDayStrategy{}
+	case "rollreturn":
+		strategy = &RollingReturn{}
 	case "default":
 		strategy = &DefaultStrategy{}
 	}
