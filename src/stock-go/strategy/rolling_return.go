@@ -31,7 +31,7 @@ func (r *RollingReturn) Init() error {
 	if r.resultID <= 0 {
 		return utils.Errorf(nil, "param error %+v", r)
 	}
-	r.Tag += fmt.Sprintf("_%d", r.resultID)
+	r.Tag += fmt.Sprintf("_1y_%d", r.resultID)
 	return nil
 }
 
@@ -68,7 +68,7 @@ func (r *RollingReturn) Step() (bool, error) {
 	}
 	// 均值
 	for i := r.stepIndex; i >= 0; i-- {
-		if !r.resultData.StockStrategyDataList[r.stepIndex].TimeCST.AddDate(-3, 0, 0).Before(r.resultData.StockStrategyDataList[i].TimeCST) {
+		if !r.resultData.StockStrategyDataList[r.stepIndex].TimeCST.AddDate(-1, 0, 0).Before(r.resultData.StockStrategyDataList[i].TimeCST) {
 			curValueStr := r.resultData.StockStrategyDataList[r.stepIndex].Value
 			curValue, err := strconv.ParseFloat(curValueStr, 64)
 			if err != nil {
@@ -79,7 +79,7 @@ func (r *RollingReturn) Step() (bool, error) {
 			if err != nil {
 				return false, utils.Errorf(err, "strconv.ParseFloat fail")
 			}
-			point.Value = (curValue - oldValue) / oldValue / 3
+			point.Value = (curValue - oldValue) / oldValue
 			break
 		}
 	}
