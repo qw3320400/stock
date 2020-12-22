@@ -14,6 +14,7 @@ type LoadDataRequest struct {
 	Code       string
 	Frequency  string
 	AdjustFlag string
+	DataSource string
 }
 
 type LoadDataRespose struct {
@@ -90,7 +91,13 @@ func LoadData(request *LoadDataRequest) (*LoadDataRespose, error) {
 			tmpTime = time.Date(tmpTime.Year(), tmpTime.Month()+1, int(1), int(0), int(0), int(0), int(0), time.UTC)
 			continue
 		}
-		err = loadStockKDataAndSave(request.Code, startTime, endTime, request.Frequency, request.AdjustFlag)
+		switch request.DataSource {
+		case DataSourceBaostock:
+			err = loadStockKDataAndSave(request.Code, startTime, endTime, request.Frequency, request.AdjustFlag)
+		case DataSourceJQData:
+			err = loadJQDataPricePeriodAndSave(request.Code, startTime, endTime, request.Frequency, request.AdjustFlag)
+		default:
+		}
 		if err != nil {
 			return nil, utils.Errorf(err, "loadStockKDataAndSave fail")
 		}

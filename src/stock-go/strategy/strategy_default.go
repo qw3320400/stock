@@ -14,10 +14,11 @@ var _ Strategy = &DefaultStrategy{}
 
 type DefaultStrategy struct {
 	// input
-	Tag       string `json:"tag"`
-	StartDate string `json:"start_date"`
-	EndDate   string `json:"end_date"`
-	Code      string `json:"code"`
+	Tag        string `json:"tag"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
+	Code       string `json:"code"`
+	DataSource string `json:"data_source"`
 	// output
 	Result *StrategyResult
 	// internal
@@ -41,6 +42,9 @@ func (s *DefaultStrategy) Init() error {
 	if s.Code == "" {
 		s.Code = DefaultCode
 	}
+	if s.DataSource == "" {
+		s.DataSource = collectdata.DataSourceBaostock
+	}
 	var (
 		err error
 	)
@@ -63,9 +67,10 @@ func (s *DefaultStrategy) LoadData() error {
 		err error
 	)
 	s.baostockLocalData, err = collectdata.LoadData(&collectdata.LoadDataRequest{
-		StartTime: s.startTime,
-		EndTime:   s.endTime,
-		Code:      s.Code,
+		StartTime:  s.startTime,
+		EndTime:    s.endTime,
+		Code:       s.Code,
+		DataSource: s.DataSource,
 	})
 	if err != nil {
 		return utils.Errorf(err, "collectdata.LoadData fail")

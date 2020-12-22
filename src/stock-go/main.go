@@ -16,6 +16,8 @@ import (
 // go run src/stock-go/main.go -command strategy tag default code sh.000300 start_date 2016-01-01 end_date 2020-10-31
 // go run src/stock-go/main.go -command strategy tag weekday code sh.000300 start_date 2016-01-01 end_date 2020-10-31 day_count 5
 // go run src/stock-go/main.go -command strategy tag rollreturn result_id 9
+// go run src/stock-go/main.go -command strategy tag default code 000300.XSHG start_date 2006-01-01 end_date 2020-12-21 data_source jqdata
+// go run src/stock-go/main.go -command strategy tag weekday code 510300.XSHG start_date 2006-01-01 end_date 2020-12-21 day_count 5 data_source jqdata
 
 // grafana-server --config=/usr/local/etc/grafana/grafana.ini --homepath /usr/local/share/grafana cfg:default.paths.logs=/usr/local/var/log/grafana cfg:default.paths.data=/usr/local/var/lib/grafana cfg:default.paths.plugins=/usr/local/var/lib/grafana/plugins
 
