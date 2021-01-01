@@ -104,7 +104,7 @@ func LoadData(request *LoadDataRequest) (*LoadDataRespose, error) {
 		resp, err := stock.GetStockKData(&stock.GetStockKDataRequest{
 			Code:       request.Code,
 			StartTime:  startTime,
-			EndTime:    endTime,
+			EndTime:    endTime.AddDate(0, 0, 1),
 			Frequency:  request.Frequency,
 			AdjustFlag: request.AdjustFlag,
 		})
