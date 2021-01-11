@@ -86,14 +86,20 @@ func dataFrequencyToJQData(frequency string) (string, error) {
 }
 
 func jqDataDateToData(date string) (time.Time, error) {
-	tmp, err := time.Parse("2006-01-02 15:04:05", date)
-	if err != nil {
+	var (
+		tmp time.Time
+		err error
+	)
+	switch len(date) {
+	case 19:
+		tmp, err = time.Parse("2006-01-02 15:04:05", date)
+	case 16:
+		tmp, err = time.Parse("2006-01-02 15:04", date)
+	case 10:
 		tmp, err = time.Parse("2006-01-02", date)
-		if err != nil {
-			return time.Time{}, utils.Errorf(err, "time.Parse fail")
-		} else {
-			return tmp, nil
-		}
+	}
+	if err != nil {
+		return time.Time{}, utils.Errorf(err, "time.Parse fail")
 	}
 	return tmp, nil
 }
