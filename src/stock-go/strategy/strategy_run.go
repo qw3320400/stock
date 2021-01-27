@@ -19,6 +19,8 @@ func RunStrategy(request map[string]string) error {
 		strategy = &DefaultStrategy{}
 	case "wave":
 		strategy = &WaveStrategy{}
+	case "rollavg":
+		strategy = &RollingAverage{}
 	}
 	requestBody, err := json.Marshal(request)
 	if err != nil {

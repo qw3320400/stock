@@ -3,22 +3,19 @@ package strategy
 import (
 	"stock-go/utils"
 	"strconv"
-	"time"
 )
 
-var _ Strategy = &WeekDayStrategy{}
+var _ Strategy = &RollingAverage{}
 
-type WeekDayStrategy struct {
+type RollingAverage struct {
 	DefaultStrategy
 	DayCountStr string `json:"day_count"`
 	// internal
 	dayCount      int64
-	lastValue     float64
-	lastCost      float64
 	lastValueList []float64
 }
 
-func (s *WeekDayStrategy) Init() error {
+func (s *RollingAverage) Init() error {
 	var err error
 	s.dayCount, err = strconv.ParseInt(s.DayCountStr, 10, 64)
 	if err != nil {
@@ -31,7 +28,7 @@ func (s *WeekDayStrategy) Init() error {
 	return s.DefaultStrategy.Init()
 }
 
-func (s *WeekDayStrategy) Step() (bool, error) {
+func (s *RollingAverage) Step() (bool, error) {
 	if s == nil || s.baostockLocalData == nil || s.stepIndex < 0 {
 		return false, utils.Errorf(nil, "param error %+v", s)
 	}
@@ -63,44 +60,7 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 		}
 		avg = avg / float64(s.dayCount)
 	}
-	if s.stepIndex == 0 {
-		s.lastValue = 1
-	}
-	if s.lastCost != 0 {
-		// 有持仓
-		point.Value = s.lastValue * close / s.lastCost
-	} else {
-		point.Value = s.lastValue
-	}
-	// 策略
-	var opt string = "-"
-	if avg > 0 && int64(len(s.baostockLocalData.StockKDateList)) > s.stepIndex+1 {
-		nextTradeDateWeekDay := s.baostockLocalData.StockKDateList[s.stepIndex+1].TimeCST.Weekday()
-		if avg < close {
-			// 牛市收盘
-			if nextTradeDateWeekDay == time.Friday || nextTradeDateWeekDay == time.Monday || nextTradeDateWeekDay == time.Tuesday {
-				// 买入
-				opt = "buy"
-			} else if nextTradeDateWeekDay == time.Wednesday || nextTradeDateWeekDay == time.Thursday {
-				// 卖出
-				opt = "sell"
-			}
-		} else if avg > close {
-			// 熊市收盘
-			// 卖出
-			opt = "sell"
-		}
-	}
-	if opt == "buy" {
-		if s.lastCost == 0 {
-			s.lastCost = close
-		}
-	} else if opt == "sell" {
-		if s.lastCost != 0 {
-			s.lastCost = 0
-			s.lastValue = point.Value
-		}
-	}
+	point.Value = avg
 	s.Result.LineData = append(s.Result.LineData, point)
 	s.stepIndex++
 	return true, nil
