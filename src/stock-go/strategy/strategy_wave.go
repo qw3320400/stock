@@ -11,18 +11,21 @@ var _ Strategy = &WaveStrategy{}
 type WaveStrategy struct {
 	DefaultStrategy
 	// internal
-	weekDay       map[int]*dayData
+	lastValue     float64
+	testData      map[string]*data
 	lastValueList []float64
 }
 
-type dayData struct {
-	Up    int
-	Total int
+type data struct {
+	Up        int
+	Total     int
+	TotalRate float64
 }
 
 func (s *WaveStrategy) Init() error {
 	s.Tag += ("_" + "3")
-	s.weekDay = map[int]*dayData{}
+	s.lastValue = 1
+	s.testData = map[string]*data{}
 	return s.DefaultStrategy.Init()
 }
 
@@ -76,15 +79,29 @@ func (s *WaveStrategy) Step() (bool, error) {
 		avg20 = avg20 / float64(dayCount)
 	}
 
-	if len(s.lastValueList) > 1 {
-		weekDay := int(s.baostockLocalData.StockKDateList[s.stepIndex].TimeCST.Weekday())
-		if s.weekDay[weekDay] == nil {
-			s.weekDay[weekDay] = &dayData{}
+	if len(s.lastValueList) > 1 &&
+		avg5 > 0 && avg10 > 0 && avg20 > 0 {
+		key := "other"
+		if avg5 > avg10 && avg10 > avg20 {
+			key = "5-10-20"
+		} else if avg5 > avg20 && avg20 > avg10 {
+			key = "5-20-10"
+		} else if avg10 > avg5 && avg5 > avg20 {
+			key = "10-5-20"
+		} else if avg10 > avg20 && avg20 > avg5 {
+			key = "10-20-5"
+		} else if avg20 > avg5 && avg5 > avg20 {
+			key = "20-5-10"
+		} else if avg20 > avg10 && avg10 > avg5 {
+			key = "20-10-5"
 		}
-		s.weekDay[weekDay].Total++
-		length := len(s.lastValueList)
-		if s.lastValueList[length] > s.lastValueList[length-1] {
-			s.weekDay[weekDay].Up++
+		if s.testData[key] == nil {
+			s.testData[key] = &data{}
+		}
+		s.testData[key].Total++
+		s.testData[key].TotalRate += (s.lastValueList[len(s.lastValueList)-1]/s.lastValueList[len(s.lastValueList)-2] - 1)
+		if s.lastValueList[len(s.lastValueList)-1] > s.lastValueList[len(s.lastValueList)-2] {
+			s.testData[key].Up++
 		}
 	}
 
@@ -94,8 +111,8 @@ func (s *WaveStrategy) Step() (bool, error) {
 }
 
 func (s *WaveStrategy) Final() error {
-	for k, v := range s.weekDay {
-		utils.Log(fmt.Sprintf("%d %+v", k, float64(v.Up)/float64(v.Total)))
+	for k, v := range s.testData {
+		utils.Log(fmt.Sprintf("%s - %d %d %+v %+v", k, v.Up, v.Total, float64(v.Up)/float64(v.Total), v.TotalRate/float64(v.Total)))
 	}
 	return nil
 }

@@ -12,22 +12,13 @@ type WeekDayStrategy struct {
 	DefaultStrategy
 	DayCountStr string `json:"day_count"`
 	// internal
-	dayCount      int64
 	lastValue     float64
 	lastCost      float64
 	lastValueList []float64
 }
 
 func (s *WeekDayStrategy) Init() error {
-	var err error
-	s.dayCount, err = strconv.ParseInt(s.DayCountStr, 10, 64)
-	if err != nil {
-		return utils.Errorf(err, "strconv.ParseInt fail")
-	}
-	if s.dayCount <= 0 || s.dayCount > 100 {
-		return utils.Errorf(nil, "param error %+v", s)
-	}
-	s.Tag += ("_" + s.DayCountStr)
+	s.Tag += "_test2"
 	return s.DefaultStrategy.Init()
 }
 
@@ -56,12 +47,22 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 	}
 	s.lastValueList = append(s.lastValueList, close)
 	// 均值
-	var avg float64
-	if s.stepIndex-s.dayCount+1 >= 0 {
-		for i := s.stepIndex; i >= s.stepIndex-s.dayCount+1; i-- {
-			avg += s.lastValueList[i]
+	var (
+		avg5, avg20 float64
+		dayCount    int64 = 5
+	)
+	if s.stepIndex-dayCount+1 >= 0 {
+		for i := s.stepIndex; i >= s.stepIndex-dayCount+1; i-- {
+			avg5 += s.lastValueList[i]
 		}
-		avg = avg / float64(s.dayCount)
+		avg5 = avg5 / float64(dayCount)
+	}
+	dayCount = 20
+	if s.stepIndex-dayCount+1 >= 0 {
+		for i := s.stepIndex; i >= s.stepIndex-dayCount+1; i-- {
+			avg20 += s.lastValueList[i]
+		}
+		avg20 = avg20 / float64(dayCount)
 	}
 	if s.stepIndex == 0 {
 		s.lastValue = 1
@@ -74,19 +75,13 @@ func (s *WeekDayStrategy) Step() (bool, error) {
 	}
 	// 策略
 	var opt string = "-"
-	if avg > 0 && int64(len(s.baostockLocalData.StockKDateList)) > s.stepIndex+1 {
+	if avg5 > 0 && avg20 > 0 && int64(len(s.baostockLocalData.StockKDateList)) > s.stepIndex+1 {
 		nextTradeDateWeekDay := s.baostockLocalData.StockKDateList[s.stepIndex+1].TimeCST.Weekday()
-		if avg < close {
-			// 牛市收盘
-			if nextTradeDateWeekDay == time.Friday || nextTradeDateWeekDay == time.Monday || nextTradeDateWeekDay == time.Tuesday {
-				// 买入
-				opt = "buy"
-			} else if nextTradeDateWeekDay == time.Wednesday || nextTradeDateWeekDay == time.Thursday {
-				// 卖出
-				opt = "sell"
-			}
-		} else if avg > close {
-			// 熊市收盘
+		if (avg20 > close && nextTradeDateWeekDay == time.Tuesday) ||
+			(avg5 < close && nextTradeDateWeekDay == time.Monday || nextTradeDateWeekDay == time.Friday) {
+			// 买入
+			opt = "buy"
+		} else {
 			// 卖出
 			opt = "sell"
 		}
