@@ -1,0 +1,8 @@
+# grafana
+grafana-server --config=/usr/local/etc/grafana/grafana.ini --homepath /usr/local/share/grafana cfg:default.paths.logs=/usr/local/var/log/grafana cfg:default.paths.data=/usr/local/var/lib/grafana cfg:default.paths.plugins=/usr/local/var/lib/grafana/plugins
+
+# tensorflow
+docker run -it -d -p 8888:8888 tensorflow/tensorflow:latest-jupyter
+
+# pip
+-i http://pypi.douban.com/simple --trusted-host pypi.douban.com
