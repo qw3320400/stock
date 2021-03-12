@@ -39,13 +39,14 @@ def processData(data):
         timeDelta = data[i+1][0] - data[i][0]
         x[i-19][5] = timeDelta.days
         # last close
-        x[i-19][6] = float(data[i-1][4])
+        lastClose = float(data[i-1][4])
+        x[i-19][6] = 1
         # open high low close volume
-        x[i-19][7] = data[i][1]
-        x[i-19][8] = data[i][2]
-        x[i-19][9] = data[i][3]
-        x[i-19][10] = data[i][4]
-        x[i-19][11] = data[i][5]
+        x[i-19][7] = float(data[i][1])/lastClose
+        x[i-19][8] = float(data[i][2])/lastClose
+        x[i-19][9] = float(data[i][3])/lastClose
+        x[i-19][10] = float(data[i][4])/lastClose
+        x[i-19][11] = float(data[i][5])/10000000
         # avg 5 10 20
         avg5, avg10, avg20 = 0, 0, 0
         for j in range(0, 20):
@@ -55,17 +56,17 @@ def processData(data):
                 avg10 += float(data[i-j][4])
             if j < 20:
                 avg20 += float(data[i-j][4])
-        x[i-19][12] = avg5/5
-        x[i-19][13] = avg10/10
-        x[i-19][14] = avg20/20
-        y[i-19] = float(data[i+1][1])
+        x[i-19][12] = avg5/5/lastClose
+        x[i-19][13] = avg10/10/lastClose
+        x[i-19][14] = avg20/20/lastClose
+        y[i-19] = float(data[i+1][1])/float(data[i][4]) - 1
     # normal
     # x[:,6] = normal(x[:,6])
     # x[:,7] = normal(x[:,7])
     # x[:,8] = normal(x[:,8])
     # x[:,9] = normal(x[:,9])
     # x[:,10] = normal(x[:,10])
-    x[:,11] = normal(x[:,11])
+    # x[:,11] = normal(x[:,11])
     # x[:,12] = normal(x[:,12])
     # x[:,13] = normal(x[:,13])
     # x[:,14] = normal(x[:,14])
@@ -95,14 +96,14 @@ model.compile(
 
 history = model.fit(
     trainX, trainY, 
-    epochs=100,
+    epochs=1000,
     validation_split=0.2,
     verbose=1,
 )
 
 hist = pd.DataFrame(history.history)
 hist['epoch'] = history.epoch
-plt.plot(hist['epoch'], hist['mse'], label = "train")
-plt.plot(hist['epoch'], hist['val_mse'], label = "val")
+plt.plot(hist['epoch'], hist['mae'], label = "train")
+plt.plot(hist['epoch'], hist['val_mae'], label = "val")
 plt.legend()
 plt.show()
