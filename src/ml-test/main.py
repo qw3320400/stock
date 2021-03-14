@@ -79,62 +79,62 @@ def processData(data):
     return x, y
 
 
-data = getData()
-trainX, trainY = processData(data)
+# data = getData()
+# trainX, trainY = processData(data)
 
-assert not np.any(np.isnan(trainX))
-assert not np.any(np.isnan(trainY))
+# assert not np.any(np.isnan(trainX))
+# assert not np.any(np.isnan(trainY))
 
-model = keras.Sequential([
-    keras.layers.Dense(32, activation='relu'),
-    keras.layers.Dense(32),
-    keras.layers.Dense(1),
-])
-model.compile(
-    optimizer=keras.optimizers.RMSprop(0.00001), 
-    loss='mae', 
-    metrics=['mae', 'mse'])
-model.load_weights('checkpoints/my_high')
-history = model.fit(
-    trainX, trainY, 
-    epochs=5000,
-    validation_split=0.2,
-    verbose=1,
-)
-model.save('model/my_high')
-model.save_weights('checkpoints/my_high')
+# model = keras.Sequential([
+#     keras.layers.Dense(32, activation='relu'),
+#     keras.layers.Dense(32),
+#     keras.layers.Dense(1),
+# ])
+# model.compile(
+#     optimizer=keras.optimizers.RMSprop(0.00001), 
+#     loss='mae', 
+#     metrics=['mae', 'mse'])
+# model.load_weights('checkpoints/my_high')
+# history = model.fit(
+#     trainX, trainY, 
+#     epochs=5000,
+#     validation_split=0.2,
+#     verbose=1,
+# )
+# model.save('model/my_high')
+# model.save_weights('checkpoints/my_high')
 
-hist = pd.DataFrame(history.history)
-hist['epoch'] = history.epoch
-plt.plot(hist['epoch'], hist['mae'], label = "train")
-plt.plot(hist['epoch'], hist['val_mae'], label = "val")
-plt.legend()
-plt.show()
+# hist = pd.DataFrame(history.history)
+# hist['epoch'] = history.epoch
+# plt.plot(hist['epoch'], hist['mae'], label = "train")
+# plt.plot(hist['epoch'], hist['val_mae'], label = "val")
+# plt.legend()
+# plt.show()
 
-# testData = np.array([[0,0,0,1,0,1,
-#     5066.14,5094.31,4917.91,4971.00,2.31,
-#     5047.06,5055.28,4981.62,5003.60,1.70,
-#     5024.65,5138.41,5020.58,5128.22,1.90,
-#     5089.13,5228.37,5422.85]])
-# baseDate = datetime.datetime.strptime('2006-01-01', '%Y-%m-%d')
-# volX = np.zeros(shape=(3, 1))
-# volY = np.zeros(shape=(3,))
-# volX[0][0] = (datetime.datetime.strptime('2021-03-09', '%Y-%m-%d') - baseDate).days
-# volX[1][0] = (datetime.datetime.strptime('2021-03-10', '%Y-%m-%d') - baseDate).days
-# volX[2][0] = (datetime.datetime.strptime('2021-03-11', '%Y-%m-%d') - baseDate).days
-# volModel = keras.models.load_model('model/my_volume')
-# volY = volModel.predict(volX)
-# base = testData[0,6]
-# testData[0,6:10] = testData[0,6:10]/base
-# testData[0,10] = volY[0]
-# testData[0,11:15] = testData[0,11:15]/base
-# testData[0,15] = volY[1]
-# testData[0,16:20] = testData[0,16:20]/base
-# testData[0,20] = volY[2]
-# testData[0,21:24] = testData[0,21:24]/base
-# hgihModel = keras.models.load_model('model/my_high')
-# lowModel = keras.models.load_model('model/my_low')
-# high = hgihModel.predict(testData)
-# low = lowModel.predict(testData)
-# print(testData)
-# print(high*base, low*base)
+testData = np.array([[0,0,0,0,1,3,
+    5047.06,5055.28,4981.62,5003.60,1.70,
+    5024.65,5138.41,5020.58,5128.22,1.90,
+    5153.67,5153.67,5086.82,5146.38,2.01,
+    5065.84,5209.33,5406.00]])
+baseDate = datetime.datetime.strptime('2006-01-01', '%Y-%m-%d')
+volX = np.zeros(shape=(3, 1))
+volY = np.zeros(shape=(3,))
+volX[0][0] = (datetime.datetime.strptime('2021-03-10', '%Y-%m-%d') - baseDate).days
+volX[1][0] = (datetime.datetime.strptime('2021-03-11', '%Y-%m-%d') - baseDate).days
+volX[2][0] = (datetime.datetime.strptime('2021-03-12', '%Y-%m-%d') - baseDate).days
+volModel = keras.models.load_model('model/my_volume')
+volY = volModel.predict(volX)
+base = testData[0,6]
+testData[0,6:10] = testData[0,6:10]/base
+testData[0,10] = testData[0,10]/volY[0]
+testData[0,11:15] = testData[0,11:15]/base
+testData[0,15] = testData[0,15]/volY[1]
+testData[0,16:20] = testData[0,16:20]/base
+testData[0,20] = testData[0,20]/volY[2]
+testData[0,21:24] = testData[0,21:24]/base
+hgihModel = keras.models.load_model('model/my_high')
+lowModel = keras.models.load_model('model/my_low')
+high = hgihModel.predict(testData)
+low = lowModel.predict(testData)
+print(testData)
+print(high*base, low*base)
