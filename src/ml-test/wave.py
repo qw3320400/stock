@@ -97,11 +97,13 @@ def processData(data):
 #     loss='mae', 
 #     metrics=['mae', 'mse'])
 # model.load_weights('checkpoints/my_high')
+# tensorboard_callback = keras.callbacks.TensorBoard(log_dir='logs') # tensorboard --logdir logs
 # history = model.fit(
 #     trainX, trainY[:,0], 
 #     epochs=5000,
 #     validation_split=0.2,
 #     verbose=1,
+#     callbacks=[tensorboard_callback],
 # )
 # model.save('model/my_high')
 # model.save_weights('checkpoints/my_high')
