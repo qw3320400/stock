@@ -37,7 +37,7 @@ def processData(data):
         volX[i][0] = (data[i][0] - baseDate).days
     volY = volModel.predict(volX)
     x = np.zeros(shape=(len(data)-20, 24))
-    y = np.zeros(shape=(len(data)-20,))
+    y = np.zeros(shape=(len(data)-20, 2))
     for i in range(len(data)):
         if i-19 < 0 or i+1 >= len(data):
             continue
@@ -75,10 +75,12 @@ def processData(data):
         x[i-19][21] = avg5/5/base
         x[i-19][22] = avg10/10/base
         x[i-19][23] = avg20/20/base
-        y[i-19] = float(data[i+1][2])/base
+        y[i-19][0] = float(data[i+1][2])/base
+        y[i-19][1] = float(data[i+1][3])/base
     return x, y
 
 
+## train ##
 # data = getData()
 # trainX, trainY = processData(data)
 
@@ -96,7 +98,7 @@ def processData(data):
 #     metrics=['mae', 'mse'])
 # model.load_weights('checkpoints/my_high')
 # history = model.fit(
-#     trainX, trainY, 
+#     trainX, trainY[:,0], 
 #     epochs=5000,
 #     validation_split=0.2,
 #     verbose=1,
@@ -111,6 +113,7 @@ def processData(data):
 # plt.legend()
 # plt.show()
 
+## predict ##
 testData = np.array([[0,0,0,0,1,3,
     5047.06,5055.28,4981.62,5003.60,1.70,
     5024.65,5138.41,5020.58,5128.22,1.90,
@@ -138,3 +141,17 @@ high = hgihModel.predict(testData)
 low = lowModel.predict(testData)
 print(testData)
 print(high*base, low*base)
+
+## watch ##
+# data = getData()
+# trainX, trainY = processData(data)
+# hgihModel = keras.models.load_model('model/my_high')
+# lowModel = keras.models.load_model('model/my_low')
+# highY = hgihModel.predict(trainX)
+# lowY = lowModel.predict(trainX)
+# plt.scatter(range(len(trainX)), (highY - trainY[:,0:1])[:,0], label = "high")
+# plt.scatter(range(len(trainX)), (lowY - trainY[:,1:2])[:,0], label = "low")
+# plt.scatter(range(len(trainX)), (trainY[:,0] - trainY[:,1]), label = "act_wave")
+# plt.scatter(range(len(trainX)), (highY - lowY)[:,0], label = "model_wave")
+# plt.legend()
+# plt.show()
