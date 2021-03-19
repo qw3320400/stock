@@ -118,82 +118,88 @@ def processData(data):
 
 
 ## train ##
-data = getData()
-trainX, trainY = processData(data)
+def train():
+    data = getData()
+    trainX, trainY = processData(data)
 
-assert not np.any(np.isnan(trainX))
-assert not np.any(np.isnan(trainY))
+    assert not np.any(np.isnan(trainX))
+    assert not np.any(np.isnan(trainY))
 
-model = keras.Sequential([
-    keras.layers.Dense(64),
-    keras.layers.Dense(64),
-    keras.layers.Dense(32),
-    keras.layers.Dense(1),
-])
-model.compile(
-    optimizer='adam', 
-    loss='mse', 
-    metrics=['mae', 'mse'])
-model.load_weights('checkpoints/my_low_64')
-# tensorboard_callback = keras.callbacks.TensorBoard(log_dir='logs') # tensorboard --logdir logs
-history = model.fit(
-    trainX, trainY[:,0], 
-    epochs=5000,
-    validation_split=0.2,
-    verbose=1,
-    # callbacks=[tensorboard_callback],
-)
-model.save('model/my_low_64')
-model.save_weights('checkpoints/my_low_64')
+    model = keras.Sequential([
+        keras.layers.Dense(64),
+        keras.layers.Dense(64),
+        keras.layers.Dense(32),
+        keras.layers.Dense(1),
+    ])
+    model.compile(
+        optimizer='adam', 
+        loss='mse', 
+        metrics=['mae', 'mse'])
+    model.load_weights('checkpoints/my_low_64')
+    # tensorboard_callback = keras.callbacks.TensorBoard(log_dir='logs') # tensorboard --logdir logs
+    history = model.fit(
+        trainX, trainY[:,1], 
+        epochs=5000,
+        validation_split=0.2,
+        verbose=1,
+        # callbacks=[tensorboard_callback],
+    )
+    model.save('model/my_low_64')
+    model.save_weights('checkpoints/my_low_64')
 
-hist = pd.DataFrame(history.history)
-hist['epoch'] = history.epoch
-plt.plot(hist['epoch'], hist['val_mae'], label = "val")
-plt.plot(hist['epoch'], hist['mae'], label = "train")
-plt.legend()
-plt.show()
+    hist = pd.DataFrame(history.history)
+    hist['epoch'] = history.epoch
+    plt.plot(hist['epoch'], hist['val_mae'], label = "val")
+    plt.plot(hist['epoch'], hist['mae'], label = "train")
+    plt.legend()
+    plt.show()
 
 ## predict ##
-# testData = np.array([[0,0,0,0,1,3,
-#     # 5047.06,5055.28,4981.62,5003.60,1.70,
-#     # 5024.65,5138.41,5020.58,5128.22,1.90,
-#     5153.67,5153.67,5086.82,5146.38,2.01,
-#     5116.12,5120.88,4992.40,5035.54,2.04,
-#     5054.41,5084.31,5099.95,5079.36,1.61,
-#     5078.62,5143.98,5349.20]])
-# baseDate = datetime.datetime.strptime('2006-01-01', '%Y-%m-%d')
-# volX = np.zeros(shape=(3, 1))
-# volY = np.zeros(shape=(3,))
-# volX[0][0] = (datetime.datetime.strptime('2021-03-10', '%Y-%m-%d') - baseDate).days
-# volX[1][0] = (datetime.datetime.strptime('2021-03-11', '%Y-%m-%d') - baseDate).days
-# volX[2][0] = (datetime.datetime.strptime('2021-03-12', '%Y-%m-%d') - baseDate).days
-# volModel = keras.models.load_model('model/my_volume')
-# volY = volModel.predict(volX)
-# base = testData[0,6]
-# testData[0,6:10] = testData[0,6:10]/base
-# testData[0,10] = testData[0,10]/volY[0]
-# testData[0,11:15] = testData[0,11:15]/base
-# testData[0,15] = testData[0,15]/volY[1]
-# testData[0,16:20] = testData[0,16:20]/base
-# testData[0,20] = testData[0,20]/volY[2]
-# testData[0,21:24] = testData[0,21:24]/base
-# hgihModel = keras.models.load_model('model/my_high')
-# lowModel = keras.models.load_model('model/my_low')
-# high = hgihModel.predict(testData)
-# low = lowModel.predict(testData)
-# print(testData)
-# print(high*base, low*base)
+def predict():
+    testData = np.array([[0,0,0,0,1,3,
+        # 5047.06,5055.28,4981.62,5003.60,1.70,
+        # 5024.65,5138.41,5020.58,5128.22,1.90,
+        5153.67,5153.67,5086.82,5146.38,2.01,
+        5116.12,5120.88,4992.40,5035.54,2.04,
+        5054.41,5084.31,5099.95,5079.36,1.61,
+        5078.62,5143.98,5349.20]])
+    baseDate = datetime.datetime.strptime('2006-01-01', '%Y-%m-%d')
+    volX = np.zeros(shape=(3, 1))
+    volY = np.zeros(shape=(3,))
+    volX[0][0] = (datetime.datetime.strptime('2021-03-10', '%Y-%m-%d') - baseDate).days
+    volX[1][0] = (datetime.datetime.strptime('2021-03-11', '%Y-%m-%d') - baseDate).days
+    volX[2][0] = (datetime.datetime.strptime('2021-03-12', '%Y-%m-%d') - baseDate).days
+    volModel = keras.models.load_model('model/my_volume')
+    volY = volModel.predict(volX)
+    base = testData[0,6]
+    testData[0,6:10] = testData[0,6:10]/base
+    testData[0,10] = testData[0,10]/volY[0]
+    testData[0,11:15] = testData[0,11:15]/base
+    testData[0,15] = testData[0,15]/volY[1]
+    testData[0,16:20] = testData[0,16:20]/base
+    testData[0,20] = testData[0,20]/volY[2]
+    testData[0,21:24] = testData[0,21:24]/base
+    hgihModel = keras.models.load_model('model/my_high')
+    lowModel = keras.models.load_model('model/my_low')
+    high = hgihModel.predict(testData)
+    low = lowModel.predict(testData)
+    print(testData)
+    print(high*base, low*base)
 
 ## watch ##
-# data = getData()
-# trainX, trainY = processData(data)
-# hgihModel = keras.models.load_model('model/my_high')
-# lowModel = keras.models.load_model('model/my_low')
-# highY = hgihModel.predict(trainX)
-# lowY = lowModel.predict(trainX)
-# plt.scatter(range(len(trainX)), (highY - trainY[:,0:1])[:,0], label = "high")
-# plt.scatter(range(len(trainX)), (lowY - trainY[:,1:2])[:,0], label = "low")
-# plt.scatter(range(len(trainX)), (trainY[:,0] - trainY[:,1]), label = "act_wave")
-# plt.scatter(range(len(trainX)), (highY - lowY)[:,0], label = "model_wave")
-# plt.legend()
-# plt.show()
+def watch():
+    data = getData()
+    trainX, trainY = processData(data)
+    hgihModel = keras.models.load_model('model/my_high_64')
+    lowModel = keras.models.load_model('model/my_low_64')
+    highY = hgihModel.predict(trainX)
+    lowY = lowModel.predict(trainX)
+
+    plt.plot(range(len(trainX)), highY, label = 'pre_h')
+    plt.plot(range(len(trainX)), lowY, label = 'pre_l')
+    # plt.plot(range(len(trainX)), trainY[:,0], label = 'act_h')
+    # plt.plot(range(len(trainX)), trainY[:,1], label = 'act_l')
+    plt.legend()
+    plt.show()
+
+watch()
