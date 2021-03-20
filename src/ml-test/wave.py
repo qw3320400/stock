@@ -146,37 +146,66 @@ def trainLow():
     plt.legend()
     plt.show()
 
+def predictData(data):
+    baseDate = datetime.datetime.strptime('2006-01-01', '%Y-%m-%d')
+    volModel = keras.models.load_model('model/my_volume')
+    volX = np.zeros(shape=(len(data), 1))
+    volY = np.zeros(shape=(len(data),))
+    for i in range(len(data)):
+        volX[i][0] = (data[i][0] - baseDate).days
+    volY = volModel.predict(volX)
+    x = np.zeros(shape=(len(data)-19, 64))
+    baseData = [[]] * (len(data)-19)
+    for i in range(len(data)):
+        if i-19 < 0 :
+            continue
+        # week day
+        x[i-19][data[i][0].weekday()] = 1
+        # next day count
+        if i+1 >= len(data): # todo
+            x[i-19][5] = 1
+        else:
+            timeDelta = data[i+1][0] - data[i][0]
+            x[i-19][5] = timeDelta.days
+        # base
+        base = float(data[i][4])
+        # avg 5 10 20
+        avg5, avg10, avg20 = 0, 0, 0
+        for j in range(0, 20):
+            if j < 5:
+                avg5 += float(data[i-j][4])
+            if j < 10:
+                avg10 += float(data[i-j][4])
+            if j < 20:
+                avg20 += float(data[i-j][4])
+        x[i-19][6] = avg5/5/base
+        x[i-19][7] = avg10/10/base
+        x[i-19][8] = avg20/20/base
+        # open high low close volume
+        for j in range(10): 
+            x[i-19][9+j*5] = float(data[i-j][1])/base
+            x[i-19][10+j*5] = float(data[i-j][2])/base
+            x[i-19][11+j*5] = float(data[i-j][3])/base
+            x[i-19][12+j*5] = float(data[i-j][4])/base
+            x[i-19][13+j*5] = float(data[i-j][5])/10000000000/volY[i-j][0]
+
+        baseData[i-19] = [data[i][0], base]
+    return x, baseData
+
 ## predict ##
 def predict():
-    testData = np.array([[0,0,0,0,1,3,
-        # 5047.06,5055.28,4981.62,5003.60,1.70,
-        # 5024.65,5138.41,5020.58,5128.22,1.90,
-        5153.67,5153.67,5086.82,5146.38,2.01,
-        5116.12,5120.88,4992.40,5035.54,2.04,
-        5054.41,5084.31,5099.95,5079.36,1.61,
-        5078.62,5143.98,5349.20]])
-    baseDate = datetime.datetime.strptime('2006-01-01', '%Y-%m-%d')
-    volX = np.zeros(shape=(3, 1))
-    volY = np.zeros(shape=(3,))
-    volX[0][0] = (datetime.datetime.strptime('2021-03-10', '%Y-%m-%d') - baseDate).days
-    volX[1][0] = (datetime.datetime.strptime('2021-03-11', '%Y-%m-%d') - baseDate).days
-    volX[2][0] = (datetime.datetime.strptime('2021-03-12', '%Y-%m-%d') - baseDate).days
-    volModel = keras.models.load_model('model/my_volume')
-    volY = volModel.predict(volX)
-    base = testData[0,6]
-    testData[0,6:10] = testData[0,6:10]/base
-    testData[0,10] = testData[0,10]/volY[0]
-    testData[0,11:15] = testData[0,11:15]/base
-    testData[0,15] = testData[0,15]/volY[1]
-    testData[0,16:20] = testData[0,16:20]/base
-    testData[0,20] = testData[0,20]/volY[2]
-    testData[0,21:24] = testData[0,21:24]/base
-    hgihModel = keras.models.load_model('model/my_high')
-    lowModel = keras.models.load_model('model/my_low')
-    high = hgihModel.predict(testData)
-    low = lowModel.predict(testData)
-    print(testData)
-    print(high*base, low*base)
+    data = getData()
+    x, baseData = predictData(data)
+    x[len(x)-1][5] = 3 # todo
+    hgihModel = keras.models.load_model('model/my_high_64')
+    lowModel = keras.models.load_model('model/my_low_64')
+    highY = hgihModel.predict(x)
+    lowY = lowModel.predict(x)
+    time = datetime.datetime.strptime('2021-03-20', '%Y-%m-%d')
+    for i in range(len(baseData)):
+        if (time - baseData[i][0]).days <= 10 :
+            base = baseData[i][1]
+            print(baseData[i][0], " -> base: ", base, " high: ", highY[i]*base, " low: ", lowY[i]*base)
 
 ## watch ##
 def watch():
@@ -196,4 +225,5 @@ def watch():
 
 # trainHigh()
 # trainLow()
-watch()
+# watch()
+predict()
