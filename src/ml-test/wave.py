@@ -61,64 +61,56 @@ def processData(data):
         x[i-19][7] = avg10/10/base
         x[i-19][8] = avg20/20/base
         # open high low close volume
-        x[i-19][9] = float(data[i][1])/base
-        x[i-19][10]= float(data[i][2])/base
-        x[i-19][11]= float(data[i][3])/base
-        x[i-19][12]= float(data[i][4])/base
-        x[i-19][13] = float(data[i][5])/10000000000/volY[i][0]
-        x[i-19][14] = float(data[i-1][1])/base
-        x[i-19][15] = float(data[i-1][2])/base
-        x[i-19][16] = float(data[i-1][3])/base
-        x[i-19][17] = float(data[i-1][4])/base
-        x[i-19][18] = float(data[i-1][5])/10000000000/volY[i-1][0]
-        x[i-19][19] = float(data[i-2][1])/base
-        x[i-19][20] = float(data[i-2][2])/base
-        x[i-19][21] = float(data[i-2][3])/base
-        x[i-19][22] = float(data[i-2][4])/base
-        x[i-19][23] = float(data[i-2][5])/10000000000/volY[i-2][0]
-        x[i-19][24] = float(data[i-3][1])/base
-        x[i-19][25] = float(data[i-3][2])/base
-        x[i-19][26] = float(data[i-3][3])/base
-        x[i-19][27] = float(data[i-3][4])/base
-        x[i-19][28] = float(data[i-3][5])/10000000000/volY[i-3][0]
-        x[i-19][29] = float(data[i-4][1])/base
-        x[i-19][30] = float(data[i-4][2])/base
-        x[i-19][31] = float(data[i-4][3])/base
-        x[i-19][32] = float(data[i-4][4])/base
-        x[i-19][33] = float(data[i-4][5])/10000000000/volY[i-4][0]
-        x[i-19][34] = float(data[i-5][1])/base
-        x[i-19][35] = float(data[i-5][2])/base
-        x[i-19][36] = float(data[i-5][3])/base
-        x[i-19][37] = float(data[i-5][4])/base
-        x[i-19][38] = float(data[i-5][5])/10000000000/volY[i-5][0]
-        x[i-19][39] = float(data[i-6][1])/base
-        x[i-19][40] = float(data[i-6][2])/base
-        x[i-19][41] = float(data[i-6][3])/base
-        x[i-19][42] = float(data[i-6][4])/base
-        x[i-19][45] = float(data[i-6][5])/10000000000/volY[i-6][0]
-        x[i-19][46] = float(data[i-7][1])/base
-        x[i-19][47] = float(data[i-7][2])/base
-        x[i-19][48] = float(data[i-7][3])/base
-        x[i-19][49] = float(data[i-7][4])/base
-        x[i-19][50] = float(data[i-7][5])/10000000000/volY[i-7][0]
-        x[i-19][51] = float(data[i-8][1])/base
-        x[i-19][52] = float(data[i-8][2])/base
-        x[i-19][53] = float(data[i-8][3])/base
-        x[i-19][54] = float(data[i-8][4])/base
-        x[i-19][55] = float(data[i-8][5])/10000000000/volY[i-8][0]
-        x[i-19][56] = float(data[i-9][1])/base
-        x[i-19][57] = float(data[i-9][2])/base
-        x[i-19][58] = float(data[i-9][3])/base
-        x[i-19][59] = float(data[i-9][4])/base
-        x[i-19][60] = float(data[i-9][5])/10000000000/volY[i-9][0]
-       
+        for j in range(10): 
+            x[i-19][9+j*5] = float(data[i-j][1])/base
+            x[i-19][10+j*5] = float(data[i-j][2])/base
+            x[i-19][11+j*5] = float(data[i-j][3])/base
+            x[i-19][12+j*5] = float(data[i-j][4])/base
+            x[i-19][13+j*5] = float(data[i-j][5])/10000000000/volY[i-j][0]
+
         y[i-19][0] = float(data[i+1][2])/base
         y[i-19][1] = float(data[i+1][3])/base
     return x, y
 
+## train high ##
+def trainHigh():
+    data = getData()
+    trainX, trainY = processData(data)
 
-## train ##
-def train():
+    assert not np.any(np.isnan(trainX))
+    assert not np.any(np.isnan(trainY))
+
+    model = keras.Sequential([
+        keras.layers.Dense(64),
+        keras.layers.Dense(64),
+        keras.layers.Dense(32),
+        keras.layers.Dense(1),
+    ])
+    model.compile(
+        optimizer='adam', 
+        loss='mse', 
+        metrics=['mae', 'mse'])
+    model.load_weights('checkpoints/my_high_64')
+    # tensorboard_callback = keras.callbacks.TensorBoard(log_dir='logs') # tensorboard --logdir logs
+    history = model.fit(
+        trainX, trainY[:,0], 
+        epochs=5000,
+        validation_split=0.2,
+        verbose=1,
+        # callbacks=[tensorboard_callback],
+    )
+    model.save('model/my_high_64')
+    model.save_weights('checkpoints/my_high_64')
+
+    hist = pd.DataFrame(history.history)
+    hist['epoch'] = history.epoch
+    plt.plot(hist['epoch'], hist['val_mae'], label = "val")
+    plt.plot(hist['epoch'], hist['mae'], label = "train")
+    plt.legend()
+    plt.show()
+
+## train low ##
+def trainLow():
     data = getData()
     trainX, trainY = processData(data)
 
@@ -195,11 +187,13 @@ def watch():
     highY = hgihModel.predict(trainX)
     lowY = lowModel.predict(trainX)
 
-    plt.plot(range(len(trainX)), highY, label = 'pre_h')
-    plt.plot(range(len(trainX)), lowY, label = 'pre_l')
+    plt.scatter(range(len(trainX)), highY, label = 'pre_h', s = 1)
+    plt.scatter(range(len(trainX)), lowY, label = 'pre_l', s = 1)
     # plt.plot(range(len(trainX)), trainY[:,0], label = 'act_h')
     # plt.plot(range(len(trainX)), trainY[:,1], label = 'act_l')
     plt.legend()
     plt.show()
 
+# trainHigh()
+# trainLow()
 watch()
