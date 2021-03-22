@@ -14,6 +14,31 @@ const (
 	DataSourceJQData = "jqdata"
 )
 
+func CollectJQDatakPricePeriodData(request *CollectDataRequest) error {
+	if request == nil || request.startTime.Unix() <= 0 || request.endTime.Unix() <= 0 {
+		return utils.Errorf(nil, "request param error %+v", request)
+	}
+	tmpTime := request.endTime
+	for {
+		// check if break
+		if request.startTime.After(tmpTime) {
+			break
+		}
+		startTime := time.Date(tmpTime.Year(), tmpTime.Month(), int(1), int(0), int(0), int(0), int(0), time.UTC)
+		endTime := time.Date(tmpTime.Year(), tmpTime.Month()+1, int(1), int(0), int(0), int(0), int(0), time.UTC).Add(time.Hour * -24)
+		// each code
+		for _, code := range request.dataCodeList {
+			err := loadJQDataPricePeriodAndSave(code, startTime, endTime, request.Frequency, request.AdjustFlag)
+			if err != nil {
+				return utils.Errorf(err, "loadStockKDataByMonthAndCode fail")
+			}
+		}
+		// sub 1 month
+		tmpTime = tmpTime.AddDate(0, -1, 0)
+	}
+	return nil
+}
+
 func loadJQDataPricePeriodAndSave(code string, startTime, endTime time.Time, frequency string, adjustFlag string) error {
 	jqdataAdjustFlag, err := dataAdjustFlagToJQData(adjustFlag)
 	if err != nil {
