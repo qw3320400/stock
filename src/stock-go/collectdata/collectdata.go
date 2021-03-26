@@ -21,6 +21,8 @@ type CollectDataRequest struct {
 	DataCode   string `json:"data_code"`
 	StartDate  string `json:"start_date"`
 	EndDate    string `json:"end_date"`
+	Frequency  string `json:"frequency"`
+	AdjustFlag string `json:"adjust_flag"`
 	// internal
 	startTime     time.Time `json:"-"`
 	endTime       time.Time `json:"-"`
@@ -54,6 +56,8 @@ func CollectData(request *CollectDataRequest) error {
 	switch request.DataSource {
 	case DataSourceBaostock:
 		return CollectBaostockData(request)
+	case DataSourceJQData:
+		return CollectJQDatakPricePeriodData(request)
 	default:
 		return utils.Errorf(nil, "request param error %+v", request)
 	}
