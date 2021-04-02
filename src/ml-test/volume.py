@@ -45,7 +45,7 @@ model = keras.Sequential([
     keras.layers.Dense(1),
 ])
 model.compile(
-    optimizer=keras.optimizers.RMSprop(0.0001),
+    optimizer='adam',
     loss='mae',
     metrics=['mae', 'mse'],
 )

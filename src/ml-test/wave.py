@@ -17,7 +17,7 @@ def getData():
         database="stock",
     )
     cursor = db.cursor()
-    for i in range(2006, 2031):
+    for i in range(2010, 2031):
         cursor.execute(" \
             select time_cst, open, high, low, close, volume, turn \
             from stock_k_data_%d \
@@ -201,7 +201,7 @@ def predict():
     lowModel = keras.models.load_model('model/my_low_64')
     highY = hgihModel.predict(x)
     lowY = lowModel.predict(x)
-    time = datetime.datetime.strptime('2021-03-20', '%Y-%m-%d')
+    time = datetime.datetime.strptime('2021-03-26', '%Y-%m-%d')
     for i in range(len(baseData)):
         if (time - baseData[i][0]).days <= 10 :
             base = baseData[i][1]
@@ -218,12 +218,12 @@ def watch():
 
     plt.scatter(range(len(trainX)), highY, label = 'pre_h', s = 1)
     plt.scatter(range(len(trainX)), lowY, label = 'pre_l', s = 1)
-    # plt.plot(range(len(trainX)), trainY[:,0], label = 'act_h')
-    # plt.plot(range(len(trainX)), trainY[:,1], label = 'act_l')
+    plt.scatter(range(len(trainX)), trainY[:,0], label = 'act_h', s = 1)
+    plt.scatter(range(len(trainX)), trainY[:,1], label = 'act_l', s = 1)
     plt.legend()
     plt.show()
 
 # trainHigh()
 # trainLow()
-# watch()
-predict()
+watch()
+# predict()
