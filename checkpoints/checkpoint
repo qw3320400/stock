@@ -1,2 +1,2 @@
-model_checkpoint_path: "my_low_64"
-all_model_checkpoint_paths: "my_low_64"
+model_checkpoint_path: "price_line"
+all_model_checkpoint_paths: "price_line"
